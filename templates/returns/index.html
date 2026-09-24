@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block title %}Damaged & Expiry Returns - Anupama Agencies{% endblock %}
+{% block page_title %}Damaged & Expiry Return Log (Everest & Colgate){% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header & Action Buttons -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Damaged & Expiry Return Register</h2>
+            <p class="text-xs text-slate-500">Track damaged cartons, leaking paste tubes, and expired spice packets to claim credit notes</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('export_returns_csv') }}" class="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl shadow-xs transition-colors">
+                <i data-lucide="download" class="w-4 h-4 text-emerald-600"></i>
+                <span>Export CSV</span>
+            </a>
+            <button onclick="openModal('add-return-modal')" class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Log Damaged Stock</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Financial KPI Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Return Claims</span>
+                <span class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                </span>
+            </div>
+            <div class="mt-2 text-2xl font-extrabold text-slate-900">{{ total_claims | inr }}</div>
+            <span class="text-[11px] text-slate-400 mt-1 block">Everest & Colgate retailer returns logged</span>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-amber-200/80 bg-amber-50/20 shadow-xs">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-700">Awaiting Depot Credit Note</span>
+                <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+                    <i data-lucide="clock" class="w-4 h-4"></i>
+                </span>
+            </div>
+            <div class="mt-2 text-2xl font-extrabold text-amber-600">{{ pending_credit_amount | inr }}</div>
+            <span class="text-[11px] text-amber-700 mt-1 block">Pending inspection or approval at depot</span>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-emerald-200/80 bg-emerald-50/20 shadow-xs">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Credit Notes Received</span>
+                <span class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                </span>
+            </div>
+            <div class="mt-2 text-2xl font-extrabold text-emerald-700">{{ credited_amount | inr }}</div>
+            <span class="text-[11px] text-emerald-700 mt-1 block">Credited to distributor company ledger</span>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <form method="GET" action="{{ url_for('returns_tracker') }}" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+            <div class="sm:col-span-5">
+                <select name="brand" class="w-full py-2 px-3 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    <option value="">All Brands (Everest & Colgate)</option>
+                    <option value="Everest Spices" {% if selected_brand == 'Everest Spices' %}selected{% endif %}>Everest Spices</option>
+                    <option value="Colgate-Palmolive" {% if selected_brand == 'Colgate-Palmolive' %}selected{% endif %}>Colgate-Palmolive</option>
+                </select>
+            </div>
+            <div class="sm:col-span-5">
+                <select name="status" class="w-full py-2 px-3 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    <option value="">All Claim Statuses</option>
+                    <option value="Pending Inspection" {% if selected_status == 'Pending Inspection' %}selected{% endif %}>Pending Inspection</option>
+                    <option value="Submitted to Depot" {% if selected_status == 'Submitted to Depot' %}selected{% endif %}>Submitted to Depot</option>
+                    <option value="Credit Note Received" {% if selected_status == 'Credit Note Received' %}selected{% endif %}>Credit Note Received</option>
+                </select>
+            </div>
+            <div class="sm:col-span-2">
+                <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1">
+                    <i data-lucide="filter" class="w-4 h-4"></i>
+                    <span>Filter</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Returns Table -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        {% if returns %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[10px] border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-4">Date</th>
+                            <th class="py-3 px-4">Brand</th>
+                            <th class="py-3 px-4">Product & Retailer</th>
+                            <th class="py-3 px-4">Quantity / Unit</th>
+                            <th class="py-3 px-4">Damage Reason</th>
+                            <th class="py-3 px-4">Claim Value</th>
+                            <th class="py-3 px-4">Claim Status</th>
+                            <th class="py-3 px-4 text-right">Depot Claim Update</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        {% for r in returns %}
+                            <tr class="hover:bg-slate-50/60">
+                                <td class="py-3 px-4 whitespace-nowrap">{{ r.return_date.strftime('%d %b %Y') }}</td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold {% if 'Everest' in r.brand %}bg-red-50 text-everest border border-red-200{% else %}bg-blue-50 text-colgate border border-blue-200{% endif %}">
+                                        {{ r.brand }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 font-bold text-slate-900">
+                                    {{ r.product_name }}
+                                    <span class="block text-[10px] text-slate-400 font-normal">
+                                        Retailer: {{ r.retailer_name }} {% if r.batch_no %}• Batch: {{ r.batch_no }}{% endif %}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap font-bold text-slate-800">{{ r.quantity }} {{ r.unit }}</td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700">
+                                        {{ r.reason }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap font-extrabold text-slate-900">{{ r.credit_note_amount | inr }}</td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider {% if r.claim_status == 'Credit Note Received' %}bg-emerald-100 text-emerald-800{% elif r.claim_status == 'Submitted to Depot' %}bg-blue-100 text-blue-800{% else %}bg-amber-100 text-amber-800{% endif %}">
+                                        {{ r.claim_status }}
+                                    </span>
+                                    {% if r.credit_note_number %}
+                                        <span class="block font-mono text-[9px] text-emerald-700 mt-0.5">#{{ r.credit_note_number }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 px-4 text-right whitespace-nowrap">
+                                    <button onclick="openClaimUpdateModal('{{ r.id }}', '{{ r.product_name }}', '{{ r.claim_status }}', '{{ r.credit_note_amount }}', '{{ r.credit_note_number or '' }}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg text-[10px]">
+                                        Update Claim
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-12 text-center text-xs text-slate-400">
+                <i data-lucide="package-check" class="w-10 h-10 mx-auto mb-2 opacity-40"></i>
+                No damage / expiry claims registered.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Log Damaged Stock Modal -->
+    <div id="add-return-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-100">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
+                        <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                    </span>
+                    <h3 class="text-sm font-bold text-slate-900">Log Damaged / Expired FMCG Product</h3>
+                </div>
+                <button onclick="closeModal('add-return-modal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form action="{{ url_for('add_return') }}" method="POST" class="p-5 space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Company / Brand *</label>
+                        <select name="brand" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                            <option value="Everest Spices">Everest Spices</option>
+                            <option value="Colgate-Palmolive">Colgate-Palmolive</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Return Date *</label>
+                        <input type="date" name="return_date" value="{{ today.strftime('%Y-%m-%d') }}" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Product Description *</label>
+                    <input type="text" name="product_name" required placeholder="e.g., Everest Kitchen King 100g or Colgate MaxFresh 150g" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Retailer / Kirana Shop *</label>
+                        <input type="text" name="retailer_name" required placeholder="e.g., Shree Ganesh Kirana" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Batch Number</label>
+                        <input type="text" name="batch_no" placeholder="e.g., EV-2026-B8" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Quantity *</label>
+                        <input type="number" name="quantity" min="1" value="1" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Unit *</label>
+                        <select name="unit" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                            <option value="Cartons">Cartons</option>
+                            <option value="Packets">Packets</option>
+                            <option value="Tubes">Tubes</option>
+                            <option value="Boxes">Boxes</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Claim Amt (₹) *</label>
+                        <input type="number" name="credit_note_amount" step="10" required placeholder="e.g. 1800" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Damage / Return Reason *</label>
+                    <select name="reason" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                        <option value="Damaged in Transit">Damaged in Transit (Outer Box Crushed)</option>
+                        <option value="Packaging Leakage">Packaging Leakage / Punctured</option>
+                        <option value="Expired">Expired Stock from Market</option>
+                        <option value="Seal Broken">Seal Broken / Defective Cap</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Remarks / Inspection Notes</label>
+                    <input type="text" name="notes" placeholder="e.g., Handed over to company depot sales executive" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeModal('add-return-modal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl shadow-sm">Save Return Claim</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Update Claim Modal -->
+    <div id="update-claim-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-100">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 class="text-sm font-bold text-slate-900">Update Depot Credit Note Claim</h3>
+                <button onclick="closeModal('update-claim-modal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="update-claim-form" method="POST" class="p-5 space-y-4">
+                <div>
+                    <span class="block text-xs font-bold text-slate-500">Product</span>
+                    <h4 id="update-claim-product" class="text-sm font-bold text-slate-900 mt-0.5"></h4>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Claim Status *</label>
+                    <select id="update-claim-status" name="claim_status" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                        <option value="Pending Inspection">Pending Inspection</option>
+                        <option value="Submitted to Depot">Submitted to Depot</option>
+                        <option value="Credit Note Received">Credit Note Received</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Approved Credit Amount (₹)</label>
+                    <input type="number" id="update-claim-amount" name="credit_note_amount" step="10" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Company Credit Note Number</label>
+                    <input type="text" id="update-claim-number" name="credit_note_number" placeholder="e.g. CN-EV-9821" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeModal('update-claim-modal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-colgate hover:bg-colgate-dark text-white text-xs font-bold rounded-xl shadow-sm">Save Claim Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openClaimUpdateModal(id, product, status, amount, number) {
+    const form = document.getElementById('update-claim-form');
+    form.action = `/returns/${id}/update-claim`;
+    document.getElementById('update-claim-product').textContent = product;
+    document.getElementById('update-claim-status').value = status;
+    document.getElementById('update-claim-amount').value = amount;
+    document.getElementById('update-claim-number').value = number;
+    openModal('update-claim-modal');
+}
+</script>
+{% endblock %}

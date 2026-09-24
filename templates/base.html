@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Anupama Agencies - FMCG Distributor Management{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        everest: {
+                            DEFAULT: '#C41E3A',
+                            dark: '#9E132A',
+                            light: '#FEE2E2',
+                        },
+                        colgate: {
+                            DEFAULT: '#004B87',
+                            dark: '#003360',
+                            light: '#E0F2FE',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Mobile Navigation Backdrop -->
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-slate-900/60 z-30 hidden lg:hidden transition-opacity"></div>
+
+    <div class="flex flex-1 min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside id="app-sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-72 bg-slate-900 text-white flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none">
+            <!-- Brand Header -->
+            <div class="p-5 border-b border-slate-800 bg-slate-950/70">
+                <div class="flex items-center space-x-3">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-red-600 via-amber-500 to-blue-600 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-red-500/20">
+                        AA
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight tracking-tight text-white">Anupama Agencies</h1>
+                        <p class="text-xs text-slate-400 font-medium">Authorized FMCG Distributor</p>
+                    </div>
+                </div>
+
+                <!-- Brand Partnership Tags -->
+                <div class="mt-4 flex items-center gap-2">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-red-950/80 text-red-300 border border-red-800/80">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-400 mr-1.5"></span>
+                        Everest Spices
+                    </span>
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-950/80 text-blue-300 border border-blue-800/80">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-400 mr-1.5"></span>
+                        Colgate-Palmolive
+                    </span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto text-sm font-medium">
+                <div class="px-3 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Main Operations</div>
+                
+                <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {% if request.endpoint == 'dashboard' %}bg-colgate text-white shadow-sm font-semibold{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="{{ url_for('workers_list') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {% if 'worker' in request.endpoint %}bg-colgate text-white shadow-sm font-semibold{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                    <span>Godown Staff & Profiles</span>
+                </a>
+
+                <div class="px-3 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Attendance & Wages</div>
+
+                <a href="{{ url_for('attendance_register') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {% if request.endpoint == 'attendance_register' %}bg-colgate text-white shadow-sm font-semibold{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i data-lucide="clipboard-check" class="w-5 h-5"></i>
+                    <span>Daily Attendance</span>
+                </a>
+
+                <a href="{{ url_for('monthly_attendance') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {% if request.endpoint == 'monthly_attendance' %}bg-colgate text-white shadow-sm font-semibold{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i data-lucide="calendar" class="w-5 h-5"></i>
+                    <span>Monthly Register</span>
+                </a>
+
+                <a href="{{ url_for('advances_ledger') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {% if request.endpoint == 'advances_ledger' %}bg-colgate text-white shadow-sm font-semibold{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i data-lucide="wallet" class="w-5 h-5"></i>
+                    <span>Advance Khata Ledger</span>
+                </a>
+
+                <a href="{{ url_for('settlements_calculator') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {% if 'settlement' in request.endpoint %}bg-colgate text-white shadow-sm font-semibold{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i data-lucide="calculator" class="w-5 h-5"></i>
+                    <span>Salary & Settlement</span>
+                </a>
+
+                <div class="px-3 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Fleet & Dispatches</div>
+
+                <a href="{{ url_for('fuel_tracker') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {% if request.endpoint == 'fuel_tracker' %}bg-colgate text-white shadow-sm font-semibold{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i data-lucide="fuel" class="w-5 h-5"></i>
+                    <span>Vehicle Fuel Tracker</span>
+                </a>
+
+                <a href="{{ url_for('vehicles_registry') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {% if request.endpoint == 'vehicles_registry' %}bg-colgate text-white shadow-sm font-semibold{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i data-lucide="truck" class="w-5 h-5"></i>
+                    <span>Delivery Vehicles</span>
+                </a>
+
+                <a href="{{ url_for('beat_dispatches') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {% if request.endpoint == 'beat_dispatches' %}bg-colgate text-white shadow-sm font-semibold{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i data-lucide="package-check" class="w-5 h-5"></i>
+                    <span>Daily Beat Dispatch</span>
+                </a>
+
+                <a href="{{ url_for('returns_tracker') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {% if request.endpoint == 'returns_tracker' %}bg-colgate text-white shadow-sm font-semibold{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    <span>Damaged & Expiry Log</span>
+                </a>
+            </nav>
+
+            <!-- Quick Export Dropdown / Section -->
+            <div class="p-3 border-t border-slate-800 bg-slate-950/50">
+                <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 px-2">Excel / CSV Exports</div>
+                <div class="grid grid-cols-2 gap-1.5 text-xs">
+                    <a href="{{ url_for('export_attendance_csv') }}" class="p-2 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5" title="Download Attendance CSV">
+                        <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i> Attendance
+                    </a>
+                    <a href="{{ url_for('export_advances_csv') }}" class="p-2 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5" title="Download Advance Khata CSV">
+                        <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i> Advances
+                    </a>
+                    <a href="{{ url_for('export_fuel_csv') }}" class="p-2 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5" title="Download Fuel Expenses CSV">
+                        <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i> Fuel Logs
+                    </a>
+                    <a href="{{ url_for('export_returns_csv') }}" class="p-2 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5" title="Download Damaged Claims CSV">
+                        <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i> Returns
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col min-w-0">
+            <!-- Top App Bar -->
+            <header class="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-xs">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <!-- Mobile Menu Button -->
+                    <div class="flex items-center gap-3">
+                        <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none">
+                            <i data-lucide="menu" class="w-6 h-6"></i>
+                        </button>
+                        <div>
+                            <span class="text-xs font-semibold text-colgate uppercase tracking-wider">Godown Operations System</span>
+                            <h2 class="text-base font-bold text-slate-900">{% block page_title %}Dashboard{% endblock %}</h2>
+                        </div>
+                    </div>
+
+                    <!-- Top Bar Badges & Actions -->
+                    <div class="flex items-center gap-3">
+                        <div class="hidden sm:flex items-center gap-2 text-xs font-medium text-slate-600 bg-slate-100 py-1.5 px-3 rounded-lg border border-slate-200">
+                            <i data-lucide="calendar-days" class="w-4 h-4 text-slate-500"></i>
+                            <span>{{ today.strftime('%A, %d %B %Y') }}</span>
+                        </div>
+                        <a href="{{ url_for('attendance_register') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-everest hover:bg-everest-dark transition-colors shadow-sm">
+                            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                            <span class="hidden sm:inline">Mark Today's Attendance</span>
+                            <span class="sm:hidden">Attendance</span>
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Flash Notification Alerts -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="auto-dismiss-alert mb-3 p-4 rounded-xl border flex items-center justify-between shadow-sm {% if category == 'success' %}bg-emerald-50 text-emerald-900 border-emerald-200{% elif category == 'error' %}bg-rose-50 text-rose-900 border-rose-200{% else %}bg-blue-50 text-blue-900 border-blue-200{% endif %}">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="{% if category == 'success' %}check-circle{% elif category == 'error' %}alert-octagon{% else %}info{% endif %}" class="w-5 h-5 flex-shrink-0"></i>
+                                    <span class="text-sm font-medium">{{ message }}</span>
+                                </div>
+                                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 p-1">
+                                    <i data-lucide="x" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <!-- Page Specific Content -->
+            <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+                {% block content %}{% endblock %}
+            </main>
+
+            <!-- Footer -->
+            <footer class="bg-white border-t border-slate-200 py-4 mt-auto no-print">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+                    <p>© {{ current_year }} <strong>Anupama Agencies</strong> • Everest Spices & Colgate-Palmolive Authorized Distribution Portal</p>
+                    <p>Designed for fast warehouse and godown operations</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Image Preview Modal (for receipts and worker photos) -->
+    <div id="image-preview-modal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 id="modal-preview-caption" class="text-sm font-bold text-slate-800">Preview</h3>
+                <button onclick="closeModal('image-preview-modal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-4 flex items-center justify-center bg-slate-50">
+                <img id="modal-preview-img" src="" alt="Preview" class="max-h-[70vh] rounded-lg shadow-inner object-contain">
+            </div>
+        </div>
+    </div>
+
+    <!-- Initialize Lucide Icons & Custom JS -->
+    <script>
+        lucide.createIcons();
+    </script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

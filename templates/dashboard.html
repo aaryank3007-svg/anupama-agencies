@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Anupama Agencies (Everest & Colgate Distributor){% endblock %}
+{% block page_title %}Warehouse & Distribution Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Distributor Welcome & Quick Summary Banner -->
+    <div class="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-600/30 border border-red-500/40 text-red-300 text-xs font-semibold mb-2">
+                    <span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
+                    Live Distribution Depot Operations
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-black tracking-tight">Anupama Agencies</h2>
+                <p class="text-slate-300 text-sm mt-1 max-w-2xl">
+                    Authorized FMCG Consignee & Distributor for <strong>Everest Spices</strong> & <strong>Colgate-Palmolive</strong>. Godown staff attendance, delivery vans, fuel expenses, and khata ledger.
+                </p>
+            </div>
+            <!-- Action buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ url_for('attendance_register') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-900 text-xs font-bold hover:bg-slate-100 transition-all shadow-md">
+                    <i data-lucide="clipboard-check" class="w-4 h-4 text-emerald-600"></i>
+                    Mark Attendance
+                </a>
+                <a href="{{ url_for('advances_ledger') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all border border-slate-700 shadow-md">
+                    <i data-lucide="wallet" class="w-4 h-4 text-amber-400"></i>
+                    Issue Advance
+                </a>
+            </div>
+        </div>
+        <!-- Decorative background elements -->
+        <div class="absolute -right-10 -bottom-10 w-60 h-60 rounded-full bg-blue-600/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute right-40 -top-10 w-60 h-60 rounded-full bg-red-600/10 blur-3xl pointer-events-none"></div>
+    </div>
+
+    <!-- 4 Key Performance Indicator (KPI) Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- 1. Attendance Today -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs card-hover">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Staff Attendance Today</span>
+                <span class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <i data-lucide="user-check" class="w-5 h-5"></i>
+                </span>
+            </div>
+            <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-3xl font-extrabold text-slate-900">{{ present_today }}</span>
+                <span class="text-sm font-semibold text-slate-400">/ {{ total_workers_count }} Active</span>
+            </div>
+            <div class="mt-3">
+                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden flex">
+                    {% set present_pct = (present_today / total_workers_count * 100) if total_workers_count > 0 else 0 %}
+                    <div class="bg-emerald-500 h-2" style="width: {{ present_pct }}%"></div>
+                </div>
+                <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
+                    <span>Absent: <strong class="text-rose-600">{{ absent_today }}</strong></span>
+                    <span>Half Day: <strong class="text-amber-600">{{ half_day_today }}</strong></span>
+                    {% if unmarked_count > 0 %}
+                        <span class="text-slate-400">Unmarked: {{ unmarked_count }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Advance Pending Recovery -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs card-hover">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Advance Pending Khata</span>
+                <span class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <i data-lucide="wallet-cards" class="w-5 h-5"></i>
+                </span>
+            </div>
+            <div class="mt-3">
+                <span class="text-3xl font-extrabold text-amber-600">{{ total_pending_advances | inr }}</span>
+            </div>
+            <div class="mt-3 text-xs text-slate-500 flex items-center gap-1.5">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-amber-500"></i>
+                <span>Recoverable during monthly payroll</span>
+            </div>
+        </div>
+
+        <!-- 3. Fuel Spent This Month -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs card-hover">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Fuel Cost This Month</span>
+                <span class="w-9 h-9 rounded-xl bg-blue-50 text-colgate flex items-center justify-center">
+                    <i data-lucide="fuel" class="w-5 h-5"></i>
+                </span>
+            </div>
+            <div class="mt-3">
+                <span class="text-3xl font-extrabold text-slate-900">{{ cur_month_fuel | inr }}</span>
+            </div>
+            <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+                <span>Last month: <strong>{{ prev_month_fuel | inr }}</strong></span>
+                {% if fuel_diff_pct > 0 %}
+                    <span class="text-rose-600 font-semibold">+{{ fuel_diff_pct }}%</span>
+                {% elif fuel_diff_pct < 0 %}
+                    <span class="text-emerald-600 font-semibold">{{ fuel_diff_pct }}%</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 4. Active Beat Dispatches -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs card-hover">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Active Delivery Beats</span>
+                <span class="w-9 h-9 rounded-xl bg-red-50 text-everest flex items-center justify-center">
+                    <i data-lucide="truck" class="w-5 h-5"></i>
+                </span>
+            </div>
+            <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-3xl font-extrabold text-slate-900">{{ active_beats_count }}</span>
+                <span class="text-xs font-semibold text-slate-400">Routes on Field</span>
+            </div>
+            <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+                <span>Pending Claims: <strong class="text-everest">{{ pending_claims_count }}</strong></span>
+                <span>Val: <strong>{{ total_pending_claim_value | inr }}</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Operations Shortcuts Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <a href="{{ url_for('attendance_register') }}" class="p-4 bg-white rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all flex flex-col items-center text-center gap-2 group">
+            <span class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i data-lucide="check-square" class="w-5 h-5"></i>
+            </span>
+            <span class="text-xs font-bold text-slate-800">Daily Attendance</span>
+        </a>
+
+        <a href="{{ url_for('advances_ledger') }}" class="p-4 bg-white rounded-xl border border-slate-200 hover:border-amber-500 hover:bg-amber-50/40 transition-all flex flex-col items-center text-center gap-2 group">
+            <span class="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i data-lucide="banknote" class="w-5 h-5"></i>
+            </span>
+            <span class="text-xs font-bold text-slate-800">Khata Ledger</span>
+        </a>
+
+        <a href="{{ url_for('fuel_tracker') }}" class="p-4 bg-white rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50/40 transition-all flex flex-col items-center text-center gap-2 group">
+            <span class="w-10 h-10 rounded-lg bg-blue-100 text-colgate flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i data-lucide="fuel" class="w-5 h-5"></i>
+            </span>
+            <span class="text-xs font-bold text-slate-800">Log Fuel Fill</span>
+        </a>
+
+        <a href="{{ url_for('beat_dispatches') }}" class="p-4 bg-white rounded-xl border border-slate-200 hover:border-red-500 hover:bg-red-50/40 transition-all flex flex-col items-center text-center gap-2 group">
+            <span class="w-10 h-10 rounded-lg bg-red-100 text-everest flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i data-lucide="truck" class="w-5 h-5"></i>
+            </span>
+            <span class="text-xs font-bold text-slate-800">Dispatch Beat</span>
+        </a>
+
+        <a href="{{ url_for('returns_tracker') }}" class="p-4 bg-white rounded-xl border border-slate-200 hover:border-purple-500 hover:bg-purple-50/40 transition-all flex flex-col items-center text-center gap-2 group">
+            <span class="w-10 h-10 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i data-lucide="package-x" class="w-5 h-5"></i>
+            </span>
+            <span class="text-xs font-bold text-slate-800">Damage Returns</span>
+        </a>
+
+        <a href="{{ url_for('settlements_calculator') }}" class="p-4 bg-white rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/40 transition-all flex flex-col items-center text-center gap-2 group">
+            <span class="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i data-lucide="calculator" class="w-5 h-5"></i>
+            </span>
+            <span class="text-xs font-bold text-slate-800">Monthly Payout</span>
+        </a>
+    </div>
+
+    <!-- Charts & Analytics Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- 6-Month Fuel Expense Trend -->
+        <div class="lg:col-span-2 bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900">Vehicle Fleet Fuel Expense Trend</h3>
+                    <p class="text-xs text-slate-500">Monthly diesel, petrol, and CNG consumption (₹)</p>
+                </div>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded bg-blue-50 text-colgate">Last 6 Months</span>
+            </div>
+            <div class="h-64 relative">
+                <canvas id="fuelTrendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Godown Staff Today Breakdown -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900">Today's Attendance</h3>
+                    <p class="text-xs text-slate-500">{{ today.strftime('%d %b %Y') }} Status</p>
+                </div>
+                <a href="{{ url_for('attendance_register') }}" class="text-xs font-semibold text-colgate hover:underline">Update</a>
+            </div>
+            
+            <div class="flex-1 flex flex-col justify-center space-y-3">
+                <div class="flex items-center justify-between p-3 rounded-xl bg-emerald-50/70 border border-emerald-100">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                        <span class="text-xs font-semibold text-slate-700">Present (Full Day)</span>
+                    </div>
+                    <span class="text-sm font-bold text-emerald-700">{{ present_today }}</span>
+                </div>
+
+                <div class="flex items-center justify-between p-3 rounded-xl bg-amber-50/70 border border-amber-100">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                        <span class="text-xs font-semibold text-slate-700">Half Day (0.5)</span>
+                    </div>
+                    <span class="text-sm font-bold text-amber-700">{{ half_day_today }}</span>
+                </div>
+
+                <div class="flex items-center justify-between p-3 rounded-xl bg-rose-50/70 border border-rose-100">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                        <span class="text-xs font-semibold text-slate-700">Absent</span>
+                    </div>
+                    <span class="text-sm font-bold text-rose-700">{{ absent_today }}</span>
+                </div>
+
+                <div class="pt-2">
+                    <a href="{{ url_for('attendance_register') }}" class="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors">
+                        <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        Open Bulk Attendance Sheet
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Activity Tables (Dispatches & Recent Advances) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Beat Dispatches Today -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-everest"></span>
+                    <h3 class="text-sm font-bold text-slate-900">Today's Delivery Beat Dispatches</h3>
+                </div>
+                <a href="{{ url_for('beat_dispatches') }}" class="text-xs font-semibold text-colgate hover:underline">View All</a>
+            </div>
+            
+            {% if today_dispatches %}
+                <div class="divide-y divide-slate-100">
+                    {% for beat in today_dispatches %}
+                        <div class="py-3 flex items-center justify-between gap-3">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-2">
+                                    <h4 class="text-xs font-bold text-slate-900 truncate">{{ beat.beat_name }}</h4>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold {% if beat.status == 'Dispatched' %}bg-amber-100 text-amber-800{% else %}bg-emerald-100 text-emerald-800{% endif %}">
+                                        {{ beat.status }}
+                                    </span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 mt-0.5">
+                                    Driver: {{ beat.driver.name if beat.driver else 'None' }} • Vehicle: {{ beat.vehicle.vehicle_number }}
+                                </p>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <span class="inline-block px-2 py-1 rounded bg-red-50 text-everest text-xs font-bold">
+                                    {{ beat.crates_everest }} Everest Crates
+                                </span>
+                                <span class="inline-block px-2 py-1 rounded bg-blue-50 text-colgate text-xs font-bold ml-1">
+                                    {{ beat.cartons_colgate }} Colgate Cts
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8 text-xs text-slate-400">
+                    <i data-lucide="package" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+                    No delivery beats dispatched yet today.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Recent Advances Issued -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    <h3 class="text-sm font-bold text-slate-900">Recent Advances Issued</h3>
+                </div>
+                <a href="{{ url_for('advances_ledger') }}" class="text-xs font-semibold text-colgate hover:underline">Khata Register</a>
+            </div>
+
+            {% if recent_advances %}
+                <div class="divide-y divide-slate-100">
+                    {% for adv in recent_advances %}
+                        <div class="py-3 flex items-center justify-between gap-3">
+                            <div class="min-w-0 flex-1">
+                                <h4 class="text-xs font-bold text-slate-900">{{ adv.worker.name }}</h4>
+                                <p class="text-[11px] text-slate-500">
+                                    {{ adv.payment_date.strftime('%d %b %Y') }} • Mode: {{ adv.payment_mode }} • {{ adv.reason or 'Personal advance' }}
+                                </p>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <span class="text-xs font-black text-slate-900 block">{{ adv.amount_paid | inr }}</span>
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded {% if adv.status == 'Approved' %}bg-amber-100 text-amber-800{% elif adv.status == 'Settled' %}bg-emerald-100 text-emerald-800{% else %}bg-slate-100 text-slate-700{% endif %}">
+                                    {{ adv.status }}
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8 text-xs text-slate-400">
+                    <i data-lucide="wallet" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+                    No advances recorded recently.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const ctx = document.getElementById('fuelTrendChart');
+    if (ctx) {
+        const labels = {{ monthly_fuel_labels | tojson }};
+        const dataValues = {{ monthly_fuel_data | tojson }};
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Fuel Expense (₹)',
+                    data: dataValues,
+                    borderColor: '#004B87',
+                    backgroundColor: 'rgba(0, 75, 135, 0.08)',
+                    borderWidth: 2.5,
+                    fill: true,
+                    tension: 0.35,
+                    pointBackgroundColor: '#C41E3A',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ' ₹' + context.parsed.y.toLocaleString('en-IN');
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(val) {
+                                return '₹' + val.toLocaleString('en-IN');
+                            },
+                            font: { size: 10 }
+                        },
+                        grid: { color: '#F1F5F9' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 10 } }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

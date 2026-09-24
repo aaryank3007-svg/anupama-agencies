@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Advance Payment & Khata Ledger - Anupama Agencies{% endblock %}
+{% block page_title %}Advance Payment & Staff Khata Ledger{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Page Header & New Advance Button -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Godown Staff Advance Khata Ledger</h2>
+            <p class="text-xs text-slate-500">Track cash advances, UPI transfers, and wage deduction settlements</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('export_advances_csv') }}" class="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl shadow-xs transition-colors">
+                <i data-lucide="download" class="w-4 h-4 text-emerald-600"></i>
+                <span>Export CSV</span>
+            </a>
+            <button onclick="openModal('add-advance-modal')" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Issue New Advance</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Financial KPI Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Advances Given</span>
+                <span class="w-8 h-8 rounded-lg bg-blue-50 text-colgate flex items-center justify-center">
+                    <i data-lucide="coins" class="w-4 h-4"></i>
+                </span>
+            </div>
+            <div class="mt-2 text-2xl font-extrabold text-slate-900">{{ total_given | inr }}</div>
+            <span class="text-[11px] text-slate-400 mt-1 block">Cumulative staff cash/UPI payouts</span>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-amber-200/80 bg-amber-50/20 shadow-xs">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-700">Outstanding Balance</span>
+                <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+                    <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                </span>
+            </div>
+            <div class="mt-2 text-2xl font-extrabold text-amber-600">{{ total_pending | inr }}</div>
+            <span class="text-[11px] text-amber-700 mt-1 block">Pending recovery from upcoming wages</span>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-emerald-200/80 bg-emerald-50/20 shadow-xs">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Settled / Recovered</span>
+                <span class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                </span>
+            </div>
+            <div class="mt-2 text-2xl font-extrabold text-emerald-700">{{ total_settled | inr }}</div>
+            <span class="text-[11px] text-emerald-700 mt-1 block">Successfully reconciled in payroll</span>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <form method="GET" action="{{ url_for('advances_ledger') }}" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+            <div class="sm:col-span-5">
+                <select name="worker_id" class="w-full py-2 px-3 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    <option value="">All Godown Staff</option>
+                    {% for w in active_workers %}
+                        <option value="{{ w.id }}" {% if selected_worker == w.id|string %}selected{% endif %}>{{ w.name }} ({{ w.role }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="sm:col-span-5">
+                <select name="status" class="w-full py-2 px-3 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    <option value="">All Advance Statuses</option>
+                    <option value="Approved" {% if selected_status == 'Approved' %}selected{% endif %}>Approved (Pending Recovery)</option>
+                    <option value="Settled" {% if selected_status == 'Settled' %}selected{% endif %}>Settled / Deducted</option>
+                    <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending Approval</option>
+                </select>
+            </div>
+            <div class="sm:col-span-2">
+                <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
+                    <i data-lucide="filter" class="w-4 h-4"></i>
+                    <span>Apply Filter</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Advances Ledger Table -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        {% if advances %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[10px] border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-4">Worker</th>
+                            <th class="py-3 px-4">Payment Date</th>
+                            <th class="py-3 px-4">Amount</th>
+                            <th class="py-3 px-4">Payment Mode</th>
+                            <th class="py-3 px-4">Reason / Purpose</th>
+                            <th class="py-3 px-4">Status</th>
+                            <th class="py-3 px-4 text-right">Settlement Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        {% for adv in advances %}
+                            <tr class="hover:bg-slate-50/60">
+                                <td class="py-3.5 px-4 font-bold text-slate-900">
+                                    <a href="{{ url_for('worker_profile', id=adv.worker.id) }}" class="hover:text-colgate">
+                                        {{ adv.worker.name }}
+                                    </a>
+                                    <span class="block text-[10px] text-slate-400 font-normal">{{ adv.worker.role }}</span>
+                                </td>
+                                <td class="py-3.5 px-4 whitespace-nowrap">{{ adv.payment_date.strftime('%d %b %Y') }}</td>
+                                <td class="py-3.5 px-4 font-extrabold text-slate-900 text-sm whitespace-nowrap">{{ adv.amount_paid | inr }}</td>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold {% if adv.payment_mode == 'Cash' %}bg-emerald-50 text-emerald-700 border border-emerald-200{% elif adv.payment_mode == 'UPI' %}bg-blue-50 text-blue-700 border border-blue-200{% else %}bg-purple-50 text-purple-700 border border-purple-200{% endif %}">
+                                        {{ adv.payment_mode }}
+                                    </span>
+                                </td>
+                                <td class="py-3.5 px-4 max-w-xs truncate">{{ adv.reason or 'Personal expense' }}</td>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider {% if adv.status == 'Approved' %}bg-amber-100 text-amber-800{% elif adv.status == 'Settled' %}bg-emerald-100 text-emerald-800{% else %}bg-slate-100 text-slate-700{% endif %}">
+                                        {{ adv.status }}
+                                    </span>
+                                </td>
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                                    {% if adv.status == 'Approved' %}
+                                        <form action="{{ url_for('update_advance_status', id=adv.id) }}" method="POST" class="inline">
+                                            <input type="hidden" name="status" value="Settled">
+                                            <button type="submit" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[10px] shadow-xs">
+                                                Mark Settled
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <form action="{{ url_for('update_advance_status', id=adv.id) }}" method="POST" class="inline">
+                                            <input type="hidden" name="status" value="Approved">
+                                            <button type="submit" class="text-slate-400 hover:text-amber-600 font-semibold text-[10px] underline">
+                                                Reopen
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-12 text-center text-xs text-slate-400">
+                <i data-lucide="wallet" class="w-10 h-10 mx-auto mb-2 opacity-40"></i>
+                No advance payments found matching criteria.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Add Advance Modal -->
+    <div id="add-advance-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-100">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+                        <i data-lucide="wallet" class="w-4 h-4"></i>
+                    </span>
+                    <h3 class="text-sm font-bold text-slate-900">Issue Cash/UPI Advance</h3>
+                </div>
+                <button onclick="closeModal('add-advance-modal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form action="{{ url_for('add_advance') }}" method="POST" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Select Worker *</label>
+                    <select name="worker_id" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                        {% for w in active_workers %}
+                            <option value="{{ w.id }}">{{ w.name }} ({{ w.role }}) - Daily: ₹{{ w.daily_wage }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Amount (₹) *</label>
+                        <input type="number" name="amount" min="50" step="50" required placeholder="e.g. 1500" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Payment Mode *</label>
+                        <select name="payment_mode" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                            <option value="Cash">Cash</option>
+                            <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
+                            <option value="Bank Transfer">Bank NEFT/IMPS</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Request Date</label>
+                        <input type="date" name="request_date" value="{{ today.strftime('%Y-%m-%d') }}" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Payment Date *</label>
+                        <input type="date" name="payment_date" value="{{ today.strftime('%Y-%m-%d') }}" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Reason / Purpose</label>
+                    <input type="text" name="reason" placeholder="e.g., Medical prescription, home repair, festival grocery" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeModal('add-advance-modal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-sm">Save & Issue Advance</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

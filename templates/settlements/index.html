@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Monthly Salary & Advance Settlement Calculator - Anupama Agencies{% endblock %}
+{% block page_title %}Monthly Salary & Advance Settlement Calculator{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header & Month Controls -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h2 class="text-base font-bold text-slate-900">Godown Staff Payroll & Advance Reconciliation</h2>
+            <p class="text-xs text-slate-500">Auto-calculate net payout: <code>(Days Worked × Daily Wage) - Advances Deducted = Net Payout</code></p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <form method="GET" action="{{ url_for('settlements_calculator') }}" class="flex items-center gap-2">
+                <select name="month" onchange="this.form.submit()" class="text-xs font-bold py-2 px-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    {% for m in range(1, 13) %}
+                        <option value="{{ m }}" {% if m == month %}selected{% endif %}>
+                            {{ ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m-1] }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <select name="year" onchange="this.form.submit()" class="text-xs font-bold py-2 px-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    {% for y in [current_year - 1, current_year, current_year + 1] %}
+                        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+
+            <a href="{{ url_for('export_settlements_csv') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Export CSV</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Settlement Calculator Cards Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {% for card in settlement_cards %}
+            {% set w = card.worker %}
+            {% set att = card.att %}
+            {% set s = card.settlement %}
+            
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col justify-between">
+                <!-- Header -->
+                <div class="p-5 border-b border-slate-100 flex items-center justify-between {% if s %}bg-emerald-50/40{% else %}bg-slate-50/50{% endif %}">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm">
+                            {{ w.name[:2].upper() }}
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900 leading-tight">
+                                <a href="{{ url_for('worker_profile', id=w.id) }}" class="hover:text-colgate">{{ w.name }}</a>
+                            </h3>
+                            <p class="text-[11px] text-slate-500">{{ w.role }} • Daily Wage: <strong class="text-slate-700">{{ w.daily_wage | inr }}</strong></p>
+                        </div>
+                    </div>
+
+                    {% if s %}
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800">
+                                Settled
+                            </span>
+                            <a href="{{ url_for('settlement_voucher', id=s.id) }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800" title="Print Salary Slip">
+                                <i data-lucide="printer" class="w-4 h-4"></i>
+                            </a>
+                        </div>
+                    {% else %}
+                        <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase bg-amber-100 text-amber-800">
+                            Unsettled
+                        </span>
+                    {% endif %}
+                </div>
+
+                <!-- Calculation Body -->
+                <div class="p-5 space-y-4">
+                    <!-- Working Days & Gross Breakdown -->
+                    <div class="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 text-center">
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Attendance & Effective Days</span>
+                            <span class="text-base font-extrabold text-slate-900 mt-0.5 block">{{ card.effective_days }} Days</span>
+                            <span class="text-[10px] text-slate-500">P: {{ att.present }} | H: {{ att.half_day }} | L: {{ att.paid_leave }} | A: {{ att.absent }}</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Gross Earned Wages</span>
+                            <span id="gross_{{ w.id }}" data-value="{{ card.gross }}" class="text-base font-extrabold text-emerald-700 mt-0.5 block">{{ card.gross | inr }}</span>
+                            <span class="text-[10px] text-slate-500">{{ card.effective_days }} × {{ w.daily_wage | inr }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Pending Advance Notification -->
+                    <div class="flex items-center justify-between p-3 rounded-xl {% if card.pending_advances > 0 %}bg-amber-50/70 border border-amber-200 text-amber-900{% else %}bg-slate-50 border border-slate-200 text-slate-600{% endif %}">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="wallet" class="w-4 h-4 text-amber-600"></i>
+                            <span class="text-xs font-semibold">Total Outstanding Advance Balance:</span>
+                        </div>
+                        <span class="text-xs font-extrabold {% if card.pending_advances > 0 %}text-amber-700{% else %}text-slate-700{% endif %}">
+                            {{ card.pending_advances | inr }}
+                        </span>
+                    </div>
+
+                    <!-- Settlement Form -->
+                    <form action="{{ url_for('process_settlement') }}" method="POST" class="space-y-3 pt-2">
+                        <input type="hidden" name="worker_id" value="{{ w.id }}">
+                        <input type="hidden" name="month_year" value="{{ month_str }}">
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">Advance Deducted (₹)</label>
+                                <input type="number" id="deduction_{{ w.id }}" name="advances_deducted" value="{{ s.advances_deducted if s else card.auto_deduction }}" min="0" step="50" oninput="recalculatePayout({{ w.id }})" class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-colgate outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">Bonus / Incentive (₹)</label>
+                                <input type="number" id="bonus_{{ w.id }}" name="bonus_incentive" value="{{ s.bonus_incentive if s else 0 }}" min="0" step="50" oninput="recalculatePayout({{ w.id }})" class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-colgate outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">Payment Mode</label>
+                                <select name="payment_mode" class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-colgate outline-none">
+                                    <option value="Cash" {% if s and s.payment_mode == 'Cash' %}selected{% endif %}>Cash Payout</option>
+                                    <option value="Bank Transfer" {% if s and s.payment_mode == 'Bank Transfer' %}selected{% endif %}>Bank NEFT/IMPS</option>
+                                    <option value="UPI" {% if s and s.payment_mode == 'UPI' %}selected{% endif %}>UPI (GPay / PhonePe)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">Ref / Cheque / UTR</label>
+                                <input type="text" name="payment_reference" value="{{ s.payment_reference if s else '' }}" placeholder="Voucher # or UTR" class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-colgate outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Live Net Payout Bar -->
+                        <div class="mt-4 p-4 rounded-xl bg-slate-900 text-white flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase block">Calculated Net Payout</span>
+                                <span id="net_{{ w.id }}" class="text-xl font-black text-emerald-400">
+                                    {{ (s.net_payout if s else card.net_pay) | inr }}
+                                </span>
+                            </div>
+                            <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-lg transition-colors shadow-md flex items-center gap-1.5">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                <span>{% if s %}Re-Settle{% else %}Settle & Print Slip{% endif %}</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

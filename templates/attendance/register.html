@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Attendance Register - Anupama Agencies{% endblock %}
+{% block page_title %}Daily Worker Attendance Register{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Date Navigation & Fast Operation Bar -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <!-- Date Selector Form -->
+        <form method="GET" action="{{ url_for('attendance_register') }}" class="flex flex-wrap items-center gap-2">
+            <label class="text-xs font-bold text-slate-700">Attendance Date:</label>
+            <input type="date" name="date" value="{{ target_date.strftime('%Y-%m-%d') }}" onchange="this.form.submit()" class="text-xs font-bold py-2 px-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+            
+            {% if target_date != today %}
+                <a href="{{ url_for('attendance_register') }}" class="text-xs font-semibold text-colgate px-2 py-1 bg-blue-50 rounded-lg hover:bg-blue-100">
+                    Go to Today
+                </a>
+            {% endif %}
+        </form>
+
+        <!-- Quick Operation Shortcuts -->
+        <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="markAllAttendance('Present')" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors shadow-xs">
+                <i data-lucide="check-check" class="w-4 h-4"></i>
+                <span>Mark All Present</span>
+            </button>
+            <button type="button" onclick="markAllAttendance('Paid Leave')" class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors">
+                <i data-lucide="sun" class="w-4 h-4 text-blue-600"></i>
+                <span>Mark All Holiday</span>
+            </button>
+            <a href="{{ url_for('monthly_attendance') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-colors shadow-xs">
+                <i data-lucide="calendar" class="w-4 h-4"></i>
+                <span>Monthly View</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Attendance Form -->
+    <form action="{{ url_for('save_attendance') }}" method="POST">
+        <input type="hidden" name="date" value="{{ target_date.strftime('%Y-%m-%d') }}">
+
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs text-slate-500 font-semibold">
+                <span>ACTIVE GODOWN WORKERS ({{ items | length }})</span>
+                <span class="text-slate-700 font-bold">{{ target_date.strftime('%A, %d %B %Y') }}</span>
+            </div>
+
+            <div class="divide-y divide-slate-100">
+                {% for item in items %}
+                    {% set w = item.worker %}
+                    <div class="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors">
+                        <!-- Worker Details -->
+                        <div class="flex items-center gap-3.5 min-w-[240px]">
+                            {% if w.photo_path %}
+                                <img src="{{ url_for('static', filename=w.photo_path) }}" alt="{{ w.name }}" class="w-11 h-11 rounded-xl object-cover border border-slate-200">
+                            {% else %}
+                                <div class="w-11 h-11 rounded-xl bg-slate-800 text-white flex items-center justify-center font-bold text-sm">
+                                    {{ w.name[:2].upper() }}
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-900">
+                                    <a href="{{ url_for('worker_profile', id=w.id) }}" class="hover:text-colgate">{{ w.name }}</a>
+                                </h4>
+                                <p class="text-xs text-slate-500">{{ w.role }} • <span class="font-semibold text-slate-700">{{ w.daily_wage | inr }}/day</span></p>
+                            </div>
+                        </div>
+
+                        <!-- Status Radio Buttons (Responsive Grid) -->
+                        <div class="flex flex-wrap items-center gap-2">
+                            <!-- Present -->
+                            <label class="cursor-pointer relative">
+                                <input type="radio" name="status_{{ w.id }}" value="Present" class="peer sr-only" {% if item.status == 'Present' %}checked{% endif %}>
+                                <div class="px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-emerald-600 transition-all flex items-center gap-1.5 shadow-xs">
+                                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                    <span>Present (Full Day)</span>
+                                </div>
+                            </label>
+
+                            <!-- Half Day -->
+                            <label class="cursor-pointer relative">
+                                <input type="radio" name="status_{{ w.id }}" value="Half Day" class="peer sr-only" {% if item.status == 'Half Day' %}checked{% endif %}>
+                                <div class="px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 transition-all flex items-center gap-1.5 shadow-xs">
+                                    <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                                    <span>Half Day (0.5)</span>
+                                </div>
+                            </label>
+
+                            <!-- Absent -->
+                            <label class="cursor-pointer relative">
+                                <input type="radio" name="status_{{ w.id }}" value="Absent" class="peer sr-only" {% if item.status == 'Absent' %}checked{% endif %}>
+                                <div class="px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 peer-checked:bg-rose-600 peer-checked:text-white peer-checked:border-rose-600 transition-all flex items-center gap-1.5 shadow-xs">
+                                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                    <span>Absent</span>
+                                </div>
+                            </label>
+
+                            <!-- Paid Leave -->
+                            <label class="cursor-pointer relative">
+                                <input type="radio" name="status_{{ w.id }}" value="Paid Leave" class="peer sr-only" {% if item.status == 'Paid Leave' %}checked{% endif %}>
+                                <div class="px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition-all flex items-center gap-1.5 shadow-xs">
+                                    <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+                                    <span>Paid Leave</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Remarks / Notes Input -->
+                        <div class="lg:w-48">
+                            <input type="text" name="notes_{{ w.id }}" value="{{ item.notes }}" placeholder="Notes (overtime, late...)" class="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-colgate outline-none">
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Submit Action Footer -->
+            <div class="p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="text-xs text-slate-500">
+                    <i data-lucide="info" class="w-4 h-4 inline mr-1 text-slate-400"></i>
+                    Attendance status calculates directly into monthly wages and salary settlements.
+                </div>
+                <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-everest hover:bg-everest-dark text-white text-xs font-extrabold rounded-xl shadow-md transition-all">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    <span>Save Daily Attendance Sheet</span>
+                </button>
+            </div>
+        </div>
+    </form>
+
+</div>
+{% endblock %}

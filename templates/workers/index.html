@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Godown Staff & Workers - Anupama Agencies{% endblock %}
+{% block page_title %}Godown Staff Management{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Page Header with Add Worker Button -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Godown Workers & Staff Directory</h2>
+            <p class="text-xs text-slate-500">Manage loaders, delivery van drivers, godown helpers, and supervisors</p>
+        </div>
+        <button onclick="openModal('add-worker-modal')" class="inline-flex items-center gap-2 px-4 py-2.5 bg-colgate hover:bg-colgate-dark text-white text-xs font-bold rounded-xl shadow-sm transition-colors self-start">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            <span>Add New Godown Worker</span>
+        </button>
+    </div>
+
+    <!-- Filters & Search Bar -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <form method="GET" action="{{ url_for('workers_list') }}" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+            <div class="sm:col-span-5 relative">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none"></i>
+                <input type="text" name="q" value="{{ search }}" placeholder="Search by name, phone, or role..." class="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-colgate focus:border-colgate outline-none">
+            </div>
+            <div class="sm:col-span-4">
+                <select name="role" class="w-full py-2 px-3 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-colgate focus:border-colgate outline-none">
+                    <option value="">All Staff Roles</option>
+                    {% for r in roles %}
+                        <option value="{{ r }}" {% if selected_role == r %}selected{% endif %}>{{ r }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="sm:col-span-2">
+                <select name="status" class="w-full py-2 px-3 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-colgate focus:border-colgate outline-none">
+                    <option value="Active" {% if selected_status == 'Active' %}selected{% endif %}>Active Only</option>
+                    <option value="Inactive" {% if selected_status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                    <option value="All" {% if selected_status == 'All' %}selected{% endif %}>All Status</option>
+                </select>
+            </div>
+            <div class="sm:col-span-1 flex gap-2">
+                <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center">
+                    <i data-lucide="filter" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Workers Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {% for item in worker_stats %}
+            {% set w = item.worker %}
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 card-hover flex flex-col justify-between">
+                <div>
+                    <!-- Top header with status & role -->
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            {% if w.photo_path %}
+                                <img src="{{ url_for('static', filename=w.photo_path) }}" alt="{{ w.name }}" class="w-12 h-12 rounded-xl object-cover border border-slate-200 cursor-pointer shadow-xs" onclick="previewImage('{{ url_for('static', filename=w.photo_path) }}', '{{ w.name }} - {{ w.role }}')">
+                            {% else %}
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 text-white flex items-center justify-center font-bold text-base shadow-xs">
+                                    {{ w.name[:2].upper() }}
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900 leading-tight">
+                                    <a href="{{ url_for('worker_profile', id=w.id) }}" class="hover:text-colgate">{{ w.name }}</a>
+                                </h3>
+                                <span class="inline-block mt-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                                    {{ w.role }}
+                                </span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {% if w.status == 'Active' %}bg-emerald-100 text-emerald-800{% else %}bg-slate-100 text-slate-600{% endif %}">
+                            {{ w.status }}
+                        </span>
+                    </div>
+
+                    <!-- Contact details -->
+                    <div class="mt-4 pt-3 border-t border-slate-100 space-y-1.5 text-xs text-slate-600">
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400">Mobile:</span>
+                            <span class="font-medium text-slate-800">{{ w.phone }}</span>
+                        </div>
+                        {% if w.emergency_contact %}
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400">Emergency:</span>
+                            <span class="font-medium text-slate-800">{{ w.emergency_contact }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400">Daily Wage:</span>
+                            <span class="font-bold text-slate-900">{{ w.daily_wage | inr }} / day</span>
+                        </div>
+                    </div>
+
+                    <!-- Current Month Working KPI Strip -->
+                    <div class="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-100 grid grid-cols-2 gap-2 text-center">
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Days This Month</span>
+                            <span class="text-base font-extrabold text-slate-900">{{ item.effective_days }} days</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Pending Advance</span>
+                            <span class="text-base font-extrabold {% if item.pending_adv > 0 %}text-amber-600{% else %}text-emerald-600{% endif %}">
+                                {{ item.pending_adv | inr }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Footer -->
+                <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <!-- Quick Call / WhatsApp -->
+                    <div class="flex items-center gap-1.5">
+                        <a href="tel:{{ w.phone }}" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors" title="Call Worker">
+                            <i data-lucide="phone" class="w-4 h-4"></i>
+                        </a>
+                        <a href="https://wa.me/91{{ w.phone }}" target="_blank" class="p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors" title="Message on WhatsApp">
+                            <i data-lucide="message-circle" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+
+                    <a href="{{ url_for('worker_profile', id=w.id) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-colgate text-white text-xs font-bold rounded-lg transition-colors">
+                        <span>Profile & Khata</span>
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                    </a>
+                </div>
+            </div>
+        {% else %}
+            <div class="col-span-full bg-white p-12 rounded-2xl border border-slate-200 text-center">
+                <i data-lucide="users" class="w-12 h-12 text-slate-300 mx-auto mb-3"></i>
+                <h3 class="text-sm font-bold text-slate-800">No Workers Found</h3>
+                <p class="text-xs text-slate-500 mt-1">Try changing search keywords or add a new worker.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Add Worker Modal -->
+    <div id="add-worker-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-100">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-colgate/10 text-colgate flex items-center justify-center">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    </span>
+                    <h3 class="text-sm font-bold text-slate-900">Add New Godown Worker</h3>
+                </div>
+                <button onclick="closeModal('add-worker-modal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form action="{{ url_for('add_worker') }}" method="POST" enctype="multipart/form-data" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Full Name *</label>
+                    <input type="text" name="name" required placeholder="e.g., Ramesh Kumar" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Contact Phone *</label>
+                        <input type="tel" name="phone" required placeholder="10-digit mobile" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Emergency Phone</label>
+                        <input type="tel" name="emergency_contact" placeholder="Family contact" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Role / Designation *</label>
+                        <select name="role" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                            {% for r in roles %}
+                                <option value="{{ r }}">{{ r }}</option>
+                            {% endfor %}
+                            <option value="Temporary Loader">Temporary Loader</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Daily Wage (₹) *</label>
+                        <input type="number" name="daily_wage" step="10" value="500" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Date of Joining</label>
+                        <input type="date" name="join_date" value="{{ today.strftime('%Y-%m-%d') }}" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Profile Photo (Optional)</label>
+                        <input type="file" name="photo" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeModal('add-worker-modal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-colgate hover:bg-colgate-dark text-white text-xs font-bold rounded-xl shadow-sm">Save Worker</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

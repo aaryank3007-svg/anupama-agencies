@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Beat Dispatch Tracker - Anupama Agencies{% endblock %}
+{% block page_title %}Daily Delivery & Beat Dispatch Tracker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header & New Dispatch Button -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Beat Dispatches & Stock Loading Log</h2>
+            <p class="text-xs text-slate-500">Track delivery van routes, driver-helper crews, Everest crates, and Colgate cartons</p>
+        </div>
+        <button onclick="openModal('add-dispatch-modal')" class="inline-flex items-center gap-2 px-4 py-2 bg-everest hover:bg-everest-dark text-white text-xs font-bold rounded-xl shadow-sm transition-colors self-start">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Dispatch New Beat</span>
+        </button>
+    </div>
+
+    <!-- Dispatch KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div class="bg-white p-5 rounded-2xl border border-red-200/80 bg-red-50/20 shadow-xs">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-everest">Everest Crates Dispatched</span>
+                <span class="w-8 h-8 rounded-lg bg-red-100 text-everest flex items-center justify-center">
+                    <i data-lucide="package" class="w-4 h-4"></i>
+                </span>
+            </div>
+            <div class="mt-2 text-2xl font-extrabold text-slate-900">{{ total_everest_crates }} Crates</div>
+            <span class="text-[11px] text-slate-500 mt-1 block">Spices blends, hing, garam & kitchen king</span>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-blue-200/80 bg-blue-50/20 shadow-xs">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-colgate">Colgate Cartons Dispatched</span>
+                <span class="w-8 h-8 rounded-lg bg-blue-100 text-colgate flex items-center justify-center">
+                    <i data-lucide="box" class="w-4 h-4"></i>
+                </span>
+            </div>
+            <div class="mt-2 text-2xl font-extrabold text-slate-900">{{ total_colgate_cartons }} Cartons</div>
+            <span class="text-[11px] text-slate-500 mt-1 block">Toothpastes, Vedshakti, MaxFresh, toothbrushes</span>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Beats Today</span>
+                <span class="w-8 h-8 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center">
+                    <i data-lucide="map-pin" class="w-4 h-4"></i>
+                </span>
+            </div>
+            <div class="mt-2 text-2xl font-extrabold text-slate-900">{{ dispatches | length }} Routes</div>
+            <span class="text-[11px] text-slate-400 mt-1 block">Scheduled retailer market distribution</span>
+        </div>
+    </div>
+
+    <!-- Dispatches Table -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-700">BEAT DISPATCH REGISTER</span>
+        </div>
+
+        {% if dispatches %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[10px] border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-4">Date</th>
+                            <th class="py-3 px-4">Beat / Route</th>
+                            <th class="py-3 px-4">Vehicle</th>
+                            <th class="py-3 px-4">Driver & Helper Crew</th>
+                            <th class="py-3 px-4">Everest Crates</th>
+                            <th class="py-3 px-4">Colgate Cartons</th>
+                            <th class="py-3 px-4">Status</th>
+                            <th class="py-3 px-4 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        {% for b in dispatches %}
+                            <tr class="hover:bg-slate-50/60">
+                                <td class="py-3.5 px-4 whitespace-nowrap font-medium">{{ b.dispatch_date.strftime('%d %b %Y') }}</td>
+                                <td class="py-3.5 px-4 font-bold text-slate-900">
+                                    {{ b.beat_name }}
+                                    {% if b.notes %}
+                                        <span class="block text-[11px] font-normal text-slate-400">{{ b.notes }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <span class="font-mono text-slate-800 font-bold block">{{ b.vehicle.vehicle_number }}</span>
+                                    <span class="text-[10px] text-slate-400">{{ b.vehicle.vehicle_name }}</span>
+                                </td>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <div>Driver: <strong class="text-slate-900">{{ b.driver.name if b.driver else 'Unassigned' }}</strong></div>
+                                    <div class="text-[11px] text-slate-500">Helper: {{ b.helper.name if b.helper else 'None' }}</div>
+                                </td>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <span class="px-2.5 py-1 rounded bg-red-50 text-everest font-extrabold text-xs">
+                                        {{ b.crates_everest }} Crates
+                                    </span>
+                                </td>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <span class="px-2.5 py-1 rounded bg-blue-50 text-colgate font-extrabold text-xs">
+                                        {{ b.cartons_colgate }} Cartons
+                                    </span>
+                                </td>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider {% if b.status == 'Dispatched' %}bg-amber-100 text-amber-800{% else %}bg-emerald-100 text-emerald-800{% endif %}">
+                                        {{ b.status }}
+                                    </span>
+                                </td>
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                                    {% if b.status == 'Dispatched' %}
+                                        <form action="{{ url_for('update_dispatch_status', id=b.id) }}" method="POST" class="inline">
+                                            <input type="hidden" name="status" value="Completed">
+                                            <button type="submit" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[10px] shadow-xs">
+                                                Mark Completed
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <span class="text-slate-400 text-[11px]">Delivered</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-12 text-center text-xs text-slate-400">
+                <i data-lucide="package-check" class="w-10 h-10 mx-auto mb-2 opacity-40"></i>
+                No beat dispatches logged yet.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Record Beat Dispatch Modal -->
+    <div id="add-dispatch-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-100">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-red-100 text-everest flex items-center justify-center">
+                        <i data-lucide="package" class="w-4 h-4"></i>
+                    </span>
+                    <h3 class="text-sm font-bold text-slate-900">Dispatch Delivery Beat / Route</h3>
+                </div>
+                <button onclick="closeModal('add-dispatch-modal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form action="{{ url_for('add_dispatch') }}" method="POST" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Beat / Route Name *</label>
+                    <input type="text" name="beat_name" required placeholder="e.g., Main Bazaar Wholesale Route A" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Vehicle *</label>
+                        <select name="vehicle_id" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                            {% for v in vehicles %}
+                                <option value="{{ v.id }}">{{ v.vehicle_name }} ({{ v.vehicle_number }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Dispatch Date *</label>
+                        <input type="date" name="dispatch_date" value="{{ today.strftime('%Y-%m-%d') }}" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Delivery Driver</label>
+                        <select name="driver_id" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                            <option value="">Unassigned</option>
+                            {% for w in workers %}
+                                <option value="{{ w.id }}">{{ w.name }} ({{ w.role }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Godown Helper / Loader</label>
+                        <select name="helper_id" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                            <option value="">None</option>
+                            {% for w in workers %}
+                                <option value="{{ w.id }}">{{ w.name }} ({{ w.role }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Everest Spices Crates</label>
+                        <input type="number" name="crates_everest" min="0" value="0" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Colgate Cartons</label>
+                        <input type="number" name="cartons_colgate" min="0" value="0" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Notes / Retail Outlets</label>
+                    <input type="text" name="notes" placeholder="e.g., 20 drops, collected empty crates" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeModal('add-dispatch-modal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-everest hover:bg-everest-dark text-white text-xs font-bold rounded-xl shadow-sm">Save & Dispatch</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

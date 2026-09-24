@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Salary Voucher #{{ settlement.id }} - Anupama Agencies{% endblock %}
+{% block page_title %}Wage Payout Voucher{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-4xl mx-auto">
+
+    <!-- Top Action Bar (Hidden when printing) -->
+    <div class="no-print flex items-center justify-between">
+        <a href="{{ url_for('settlements_calculator') }}" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Back to Calculator</span>
+        </a>
+        <div class="flex items-center gap-2">
+            <button onclick="window.print()" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-md transition-colors">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                <span>Print Official Voucher</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Printable Voucher Container -->
+    <div class="bg-white rounded-2xl border border-slate-300 shadow-lg p-8 voucher-container">
+        <!-- Voucher Header -->
+        <div class="border-b-2 border-slate-900 pb-6 text-center">
+            <div class="inline-block px-3 py-1 rounded bg-red-100 text-everest text-[11px] font-bold uppercase tracking-wider mb-2">
+                Authorized FMCG Distribution Depot
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight uppercase">Anupama Agencies</h1>
+            <p class="text-xs text-slate-600 font-semibold mt-1">
+                Authorized Distributor: <strong>Everest Spices</strong> & <strong>Colgate-Palmolive India Ltd.</strong>
+            </p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Godown & Warehouse Operations • Daily Wage Payout Voucher</p>
+        </div>
+
+        <!-- Voucher Meta Strip -->
+        <div class="py-4 border-b border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+            <div>
+                <span class="text-slate-400 font-medium block">Voucher Number:</span>
+                <span class="font-mono font-bold text-slate-900">VCHR-{{ settlement.id }}-{{ settlement.month_year }}</span>
+            </div>
+            <div>
+                <span class="text-slate-400 font-medium block">Payout Month:</span>
+                <span class="font-bold text-slate-900">{{ settlement.month_year }}</span>
+            </div>
+            <div>
+                <span class="text-slate-400 font-medium block">Disbursement Date:</span>
+                <span class="font-bold text-slate-900">{{ settlement.settlement_date.strftime('%d %B %Y') }}</span>
+            </div>
+            <div>
+                <span class="text-slate-400 font-medium block">Payment Mode:</span>
+                <span class="font-bold text-slate-900">{{ settlement.payment_mode }} {% if settlement.payment_reference %}({{ settlement.payment_reference }}){% endif %}</span>
+            </div>
+        </div>
+
+        <!-- Worker Information -->
+        <div class="py-5 border-b border-slate-200">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Godown Staff Particulars</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div>
+                    <span class="text-slate-500 block">Worker Name:</span>
+                    <span class="text-sm font-extrabold text-slate-900">{{ settlement.worker.name }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block">Designation / Role:</span>
+                    <span class="font-bold text-slate-800">{{ settlement.worker.role }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block">Registered Contact:</span>
+                    <span class="font-bold text-slate-800">{{ settlement.worker.phone }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Reconciliation Table -->
+        <div class="py-5 border-b border-slate-200">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Attendance Days Breakdown</h3>
+            <div class="grid grid-cols-4 gap-3 text-center text-xs">
+                <div class="p-2.5 rounded bg-slate-50 border border-slate-100">
+                    <span class="text-[10px] text-slate-500 uppercase font-bold block">Present (Full)</span>
+                    <span class="text-sm font-bold text-slate-900 mt-1 block">{{ settlement.days_present }}</span>
+                </div>
+                <div class="p-2.5 rounded bg-slate-50 border border-slate-100">
+                    <span class="text-[10px] text-slate-500 uppercase font-bold block">Half Days (0.5)</span>
+                    <span class="text-sm font-bold text-slate-900 mt-1 block">{{ settlement.half_days }}</span>
+                </div>
+                <div class="p-2.5 rounded bg-slate-50 border border-slate-100">
+                    <span class="text-[10px] text-slate-500 uppercase font-bold block">Paid Leaves</span>
+                    <span class="text-sm font-bold text-slate-900 mt-1 block">{{ settlement.paid_leaves }}</span>
+                </div>
+                <div class="p-2.5 rounded bg-blue-50/60 border border-blue-200">
+                    <span class="text-[10px] text-colgate uppercase font-bold block">Effective Days</span>
+                    <span class="text-sm font-black text-colgate-dark mt-1 block">{{ settlement.effective_days }} Days</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wage Payout Calculation Table -->
+        <div class="py-6 border-b-2 border-slate-900">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Earnings & Deductions Summary</h3>
+            <table class="w-full text-xs">
+                <tbody class="divide-y divide-slate-100">
+                    <tr>
+                        <td class="py-2.5 text-slate-600">Daily Wage Rate</td>
+                        <td class="py-2.5 text-right font-medium">{{ settlement.daily_wage | inr }} / day</td>
+                    </tr>
+                    <tr>
+                        <td class="py-2.5 text-slate-600">Effective Days Worked ({{ settlement.effective_days }} Days × {{ settlement.daily_wage | inr }})</td>
+                        <td class="py-2.5 text-right font-bold text-slate-900">{{ settlement.gross_earnings | inr }}</td>
+                    </tr>
+                    <tr>
+                        <td class="py-2.5 text-rose-600 font-semibold">Less: Advance Recovered from Khata Ledger</td>
+                        <td class="py-2.5 text-right font-bold text-rose-600">-{{ settlement.advances_deducted | inr }}</td>
+                    </tr>
+                    {% if settlement.bonus_incentive > 0 %}
+                    <tr>
+                        <td class="py-2.5 text-emerald-600 font-semibold">Add: Festival Bonus / Overtime Incentive</td>
+                        <td class="py-2.5 text-right font-bold text-emerald-600">+{{ settlement.bonus_incentive | inr }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr class="bg-slate-900 text-white font-extrabold text-sm">
+                        <td class="py-3.5 px-3 uppercase tracking-wider">Net Amount Payable to Staff</td>
+                        <td class="py-3.5 px-3 text-right text-base text-emerald-400 font-black">{{ settlement.net_payout | inr }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Signatures Section -->
+        <div class="pt-12 pb-4 grid grid-cols-2 gap-8 text-center text-xs">
+            <div>
+                <div class="border-t border-slate-400 w-48 mx-auto pt-2 font-bold text-slate-800">
+                    Worker Signature / Thumb
+                </div>
+                <span class="text-[10px] text-slate-400">Received full payment as calculated</span>
+            </div>
+            <div>
+                <div class="border-t border-slate-400 w-48 mx-auto pt-2 font-bold text-slate-800">
+                    For Anupama Agencies
+                </div>
+                <span class="text-[10px] text-slate-400">Authorized Godown Manager</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

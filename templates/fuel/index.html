@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Fuel Expense Tracker - Anupama Agencies{% endblock %}
+{% block page_title %}Delivery Fleet Fuel Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header & Action Buttons -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Delivery Vehicles & Monthly Fuel Expenses</h2>
+            <p class="text-xs text-slate-500">Track diesel, petrol, and CNG fills for Everest Spices and Colgate vans</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('vehicles_registry') }}" class="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl shadow-xs transition-colors">
+                <i data-lucide="truck" class="w-4 h-4 text-colgate"></i>
+                <span>Manage Fleet</span>
+            </a>
+            <a href="{{ url_for('export_fuel_csv') }}" class="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl shadow-xs transition-colors">
+                <i data-lucide="download" class="w-4 h-4 text-emerald-600"></i>
+                <span>Export CSV</span>
+            </a>
+            <button onclick="openModal('add-fuel-modal')" class="inline-flex items-center gap-2 px-4 py-2 bg-colgate hover:bg-colgate-dark text-white text-xs font-bold rounded-xl shadow-sm transition-colors">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Log Fuel Fill</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Monthly Analytics Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <!-- Monthly Fuel Cost -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Fuel Cost ({{ cur_month }}/{{ cur_year }})</span>
+                <span class="w-8 h-8 rounded-lg bg-blue-50 text-colgate flex items-center justify-center">
+                    <i data-lucide="fuel" class="w-4 h-4"></i>
+                </span>
+            </div>
+            <div class="mt-2 text-2xl font-extrabold text-slate-900">{{ total_month_spent | inr }}</div>
+            <div class="mt-1 text-xs text-slate-500 flex items-center justify-between">
+                <span>Previous Month: <strong>{{ prev_month_spent | inr }}</strong></span>
+                {% if prev_month_spent > 0 %}
+                    {% set diff = ((total_month_spent - prev_month_spent) / prev_month_spent * 100) | round(1) %}
+                    <span class="font-bold {% if diff > 0 %}text-rose-600{% else %}text-emerald-600{% endif %}">
+                        {% if diff > 0 %}+{% endif %}{{ diff }}%
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Total Liters -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Liters Filled</span>
+                <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <i data-lucide="droplet" class="w-4 h-4"></i>
+                </span>
+            </div>
+            <div class="mt-2 text-2xl font-extrabold text-slate-900">{{ total_month_liters | round(1) }} Liters</div>
+            <span class="text-[11px] text-slate-400 mt-1 block">Active delivery van and auto consumption</span>
+        </div>
+
+        <!-- Average Cost Per Vehicle -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Avg Cost Per Vehicle</span>
+                <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <i data-lucide="gauge" class="w-4 h-4"></i>
+                </span>
+            </div>
+            {% set avg_cost = (total_month_spent / vehicles|length) if vehicles|length > 0 else 0 %}
+            <div class="mt-2 text-2xl font-extrabold text-slate-900">{{ avg_cost | inr }}</div>
+            <span class="text-[11px] text-slate-400 mt-1 block">Across {{ vehicles | length }} registered fleet units</span>
+        </div>
+    </div>
+
+    <!-- Vehicle Cost Breakdown Strip -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {% for v_stat in vehicle_stats %}
+            <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between shadow-xs">
+                <div class="min-w-0">
+                    <h4 class="text-xs font-bold text-slate-900 truncate">{{ v_stat.vehicle.vehicle_name }}</h4>
+                    <p class="text-[11px] text-slate-500">{{ v_stat.vehicle.vehicle_number }} • {{ v_stat.vehicle.fuel_type }}</p>
+                </div>
+                <div class="text-right flex-shrink-0">
+                    <span class="text-xs font-extrabold text-colgate block">{{ v_stat.spent | inr }}</span>
+                    <span class="text-[10px] text-slate-400">{{ v_stat.fill_count }} fills ({{ v_stat.liters | round(1) }}L)</span>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <form method="GET" action="{{ url_for('fuel_tracker') }}" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+            <div class="sm:col-span-5">
+                <select name="vehicle_id" class="w-full py-2 px-3 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    <option value="">All Delivery Vehicles</option>
+                    {% for v in vehicles %}
+                        <option value="{{ v.id }}" {% if selected_vehicle == v.id|string %}selected{% endif %}>{{ v.vehicle_name }} ({{ v.vehicle_number }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="sm:col-span-3">
+                <select name="month" class="w-full py-2 px-3 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    {% for m in range(1, 13) %}
+                        <option value="{{ m }}" {% if m == cur_month %}selected{% endif %}>Month {{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="sm:col-span-2">
+                <select name="year" class="w-full py-2 px-3 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    {% for y in [current_year - 1, current_year, current_year + 1] %}
+                        <option value="{{ y }}" {% if y == cur_year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="sm:col-span-2">
+                <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1">
+                    <i data-lucide="filter" class="w-4 h-4"></i>
+                    <span>Filter</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Fuel Expenses Table -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        {% if expenses %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[10px] border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-4">Date</th>
+                            <th class="py-3 px-4">Vehicle</th>
+                            <th class="py-3 px-4">Driver</th>
+                            <th class="py-3 px-4">Fuel Type</th>
+                            <th class="py-3 px-4">Amount Spent</th>
+                            <th class="py-3 px-4">Liters</th>
+                            <th class="py-3 px-4">Odometer</th>
+                            <th class="py-3 px-4">Receipt Slip</th>
+                            <th class="py-3 px-4">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        {% for exp in expenses %}
+                            <tr class="hover:bg-slate-50/60">
+                                <td class="py-3 px-4 whitespace-nowrap font-medium">{{ exp.date.strftime('%d %b %Y') }}</td>
+                                <td class="py-3 px-4 font-bold text-slate-900">
+                                    {{ exp.vehicle.vehicle_name }}
+                                    <span class="block text-[10px] text-slate-400 font-normal">{{ exp.vehicle.vehicle_number }}</span>
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap">{{ exp.driver.name if exp.driver else 'Unassigned' }}</td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold {% if exp.fuel_type == 'Diesel' %}bg-amber-100 text-amber-800{% elif exp.fuel_type == 'Petrol' %}bg-blue-100 text-blue-800{% else %}bg-emerald-100 text-emerald-800{% endif %}">
+                                        {{ exp.fuel_type }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 font-extrabold text-slate-900 text-sm whitespace-nowrap">{{ exp.amount_spent | inr }}</td>
+                                <td class="py-3 px-4 whitespace-nowrap">{{ exp.liters }} L</td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    {% if exp.odometer_reading %}
+                                        <span class="font-mono text-slate-800">{{ exp.odometer_reading }} KM</span>
+                                    {% else %}
+                                        <span class="text-slate-400">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    {% if exp.receipt_image %}
+                                        <button onclick="previewImage('{{ url_for('static', filename=exp.receipt_image) }}', 'Receipt: {{ exp.vehicle.vehicle_number }} ({{ exp.date.strftime('%d %b %Y') }})')" class="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[10px] inline-flex items-center gap-1">
+                                            <i data-lucide="image" class="w-3.5 h-3.5 text-colgate"></i>
+                                            <span>View Slip</span>
+                                        </button>
+                                    {% else %}
+                                        <span class="text-slate-400 text-[11px]">No slip</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 px-4 max-w-xs truncate text-slate-500">{{ exp.notes or '-' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-12 text-center text-xs text-slate-400">
+                <i data-lucide="fuel" class="w-10 h-10 mx-auto mb-2 opacity-40"></i>
+                No fuel fill entries recorded yet.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Log Fuel Fill Modal -->
+    <div id="add-fuel-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-100">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-blue-100 text-colgate flex items-center justify-center">
+                        <i data-lucide="fuel" class="w-4 h-4"></i>
+                    </span>
+                    <h3 class="text-sm font-bold text-slate-900">Log Delivery Vehicle Fuel Fill</h3>
+                </div>
+                <button onclick="closeModal('add-fuel-modal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form action="{{ url_for('add_fuel_expense') }}" method="POST" enctype="multipart/form-data" class="p-5 space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Select Vehicle *</label>
+                        <select name="vehicle_id" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                            {% for v in vehicles %}
+                                <option value="{{ v.id }}">{{ v.vehicle_name }} ({{ v.vehicle_number }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Driver In-Charge</label>
+                        <select name="driver_id" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                            <option value="">Unassigned</option>
+                            {% for d in drivers %}
+                                <option value="{{ d.id }}">{{ d.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Fuel Type *</label>
+                        <select name="fuel_type" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                            <option value="Diesel">Diesel</option>
+                            <option value="Petrol">Petrol</option>
+                            <option value="CNG">CNG</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Amount Spent (₹) *</label>
+                        <input type="number" name="amount_spent" step="10" required placeholder="e.g. 2500" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Liters Filled</label>
+                        <input type="number" name="liters" step="0.1" placeholder="e.g. 28.5" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Date Filled *</label>
+                        <input type="date" name="date" value="{{ today.strftime('%Y-%m-%d') }}" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Odometer Reading (KM)</label>
+                        <input type="number" name="odometer_reading" placeholder="e.g. 42500" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Receipt / Bill Slip</label>
+                        <input type="file" name="receipt" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Petrol Pump / Station Notes</label>
+                        <input type="text" name="notes" placeholder="e.g., HPCL Station highway refill" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeModal('add-fuel-modal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-colgate hover:bg-colgate-dark text-white text-xs font-bold rounded-xl shadow-sm">Save Fuel Log</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

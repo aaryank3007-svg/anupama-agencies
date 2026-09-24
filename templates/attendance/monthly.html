@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Monthly Attendance Register - Anupama Agencies{% endblock %}
+{% block page_title %}Monthly Attendance Register & Muster Roll{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header & Month Controls -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h2 class="text-base font-bold text-slate-900">Monthly Muster Roll & Attendance Grid</h2>
+            <p class="text-xs text-slate-500">Day-wise attendance tracking for calculating working days and monthly wages</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- Month / Year Selector -->
+            <form method="GET" action="{{ url_for('monthly_attendance') }}" class="flex items-center gap-2">
+                <select name="month" onchange="this.form.submit()" class="text-xs font-bold py-2 px-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    {% for m in range(1, 13) %}
+                        <option value="{{ m }}" {% if m == month %}selected{% endif %}>
+                            {{ ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m-1] }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <select name="year" onchange="this.form.submit()" class="text-xs font-bold py-2 px-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-colgate outline-none">
+                    {% for y in [current_year - 1, current_year, current_year + 1] %}
+                        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+
+            <a href="{{ url_for('export_attendance_csv') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Export CSV</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Attendance Key Legend -->
+    <div class="flex flex-wrap items-center gap-4 text-xs font-semibold">
+        <span class="inline-flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded-md bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-[10px]">P</span>
+            <span>Present (1.0)</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded-md bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-[10px]">H</span>
+            <span>Half Day (0.5)</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded-md bg-rose-100 text-rose-800 flex items-center justify-center font-bold text-[10px]">A</span>
+            <span>Absent (0.0)</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded-md bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-[10px]">L</span>
+            <span>Paid Leave (1.0)</span>
+        </span>
+    </div>
+
+    <!-- Monthly Muster Roll Table -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead class="bg-slate-900 text-white">
+                    <tr>
+                        <th class="py-3 px-3 font-bold sticky left-0 bg-slate-900 z-10 min-w-[160px]">Worker Name</th>
+                        <th class="py-3 px-2 font-bold min-w-[120px]">Role</th>
+                        {% for day in days_list %}
+                            <th class="py-2 px-1.5 text-center font-bold text-[11px] min-w-[28px] {% if day.weekday() == 6 %}bg-slate-800 text-amber-400{% endif %}">
+                                {{ day.day }}
+                            </th>
+                        {% endfor %}
+                        <th class="py-3 px-3 text-center font-bold bg-slate-800 text-white min-w-[80px]">Total Eff.</th>
+                        <th class="py-3 px-3 text-center font-bold bg-slate-800 text-white min-w-[70px]">%</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for row in matrix %}
+                        {% set w = row.worker %}
+                        {% set s = row.summary %}
+                        <tr class="hover:bg-slate-50/70">
+                            <!-- Worker Name (Sticky Left) -->
+                            <td class="py-3 px-3 font-bold text-slate-900 sticky left-0 bg-white z-10 border-r border-slate-100 shadow-xs">
+                                <a href="{{ url_for('worker_profile', id=w.id) }}" class="hover:text-colgate">{{ w.name }}</a>
+                            </td>
+                            <td class="py-3 px-2 text-slate-500 font-medium text-[11px] truncate max-w-[130px]">
+                                {{ w.role }}
+                            </td>
+
+                            <!-- Day cells -->
+                            {% for status in row.days %}
+                                <td class="py-2 px-1 text-center">
+                                    {% if status == 'Present' %}
+                                        <span class="inline-block w-6 h-6 rounded leading-6 text-center font-bold text-[10px] bg-emerald-100 text-emerald-800">P</span>
+                                    {% elif status == 'Half Day' %}
+                                        <span class="inline-block w-6 h-6 rounded leading-6 text-center font-bold text-[10px] bg-amber-100 text-amber-800">H</span>
+                                    {% elif status == 'Absent' %}
+                                        <span class="inline-block w-6 h-6 rounded leading-6 text-center font-bold text-[10px] bg-rose-100 text-rose-800">A</span>
+                                    {% elif status == 'Paid Leave' %}
+                                        <span class="inline-block w-6 h-6 rounded leading-6 text-center font-bold text-[10px] bg-blue-100 text-blue-800">L</span>
+                                    {% else %}
+                                        <span class="inline-block w-6 h-6 text-slate-300 text-center">-</span>
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+
+                            <!-- Effective Days Total -->
+                            <td class="py-3 px-3 text-center font-extrabold text-slate-900 bg-slate-50 border-l border-slate-100">
+                                {{ s.effective_days }}
+                            </td>
+                            <!-- Attendance Pct -->
+                            <td class="py-3 px-3 text-center font-bold {% if s.attendance_pct >= 85 %}text-emerald-700{% elif s.attendance_pct >= 60 %}text-amber-600{% else %}text-rose-600{% endif %} bg-slate-50">
+                                {{ s.attendance_pct }}%
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
