@@ -93,3 +93,27 @@ To run the automated verification suite:
 python smoke_test.py
 ```
 This tests all database models, page rendering (HTTP 200), attendance saving, advance balance updating, salary settlement generation, and CSV download streams.
+
+---
+
+## 🌐 Cloud Deployment (Render.com)
+
+The project includes pre-configured production files ([render.yaml](render.yaml) and [gunicorn.conf.py](gunicorn.conf.py)) for zero-friction cloud deployment on Render's Free tier:
+
+### Method 1: Using Render Blueprint (Recommended - 1 Click)
+1. Go to [dashboard.render.com](https://dashboard.render.com/) and log in with your GitHub account (`aaryank3007-svg`).
+2. Click **New +** (top right) $\rightarrow$ **Blueprint**.
+3. Grant access to your repository: `aaryank3007-svg/anupama-agencies`.
+4. Render automatically reads `render.yaml`, configures Python 3.11, sets up Gunicorn on the assigned cloud `$PORT`, and generates a secure random `SECRET_KEY`.
+5. Click **Apply**. Your web app will build and go live at `https://anupama-agencies.onrender.com` with a free SSL/HTTPS certificate!
+
+### Method 2: Manual Web Service Setup
+1. In Render Dashboard, click **New +** $\rightarrow$ **Web Service**.
+2. Connect `aaryank3007-svg/anupama-agencies`.
+3. Configure the following settings:
+   - **Name:** `anupama-agencies`
+   - **Environment:** `Python 3`
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `gunicorn app:app`
+   - **Instance Type:** `Free`
+4. Click **Create Web Service**.
