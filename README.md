@@ -1,5 +1,8 @@
 # Anupama Agencies — FMCG Distribution Management System
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/aaryank3007-svg/anupama-agencies)
+[![GitHub repo](https://img.shields.io/badge/GitHub-Public_Repo-blue?logo=github)](https://github.com/aaryank3007-svg/anupama-agencies)
+
 An authorized FMCG distributor web portal built for **Anupama Agencies** — handling warehousing, godown workers, beat delivery dispatch, vehicle fleet fuel expenses, and advance payments for **Everest Spices** and **Colgate-Palmolive India Ltd.**
 
 ---
