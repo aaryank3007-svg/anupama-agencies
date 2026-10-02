@@ -7,8 +7,12 @@ from database import init_db
 from utils import format_inr, save_uploaded_file, export_csv_response
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'anupama-agencies-fmcg-distributor-secret-2026'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///anupama_agencies.db'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'anupama-agencies-fmcg-distributor-secret-2026')
+
+db_url = os.environ.get('DATABASE_URL', 'sqlite:///anupama_agencies.db')
+if db_url.startswith('postgres://'):
+    db_url = db_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max upload
 
@@ -957,4 +961,6 @@ def export_returns_csv():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', 'False').lower() in ('true', '1')
+    app.run(host='0.0.0.0', port=port, debug=debug)
