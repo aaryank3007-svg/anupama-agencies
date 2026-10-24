@@ -333,5 +333,10 @@
 
     <!-- Core Application Logic Script -->
     <script src="static/js/app.js"></script>
+    <script>
+        if (typeof StorageManager === 'undefined') {
+            document.write('<script src="app.js"><\/script>');
+        }
+    </script>
 </body>
 </html>
