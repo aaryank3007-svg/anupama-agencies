@@ -40,6 +40,9 @@ init_db(app)
 # -------------------------------------------------------------------
 @app.route('/')
 def dashboard():
+    index_file = os.path.join(app.root_path, 'index.html')
+    if os.path.exists(index_file) and request.args.get('classic') != '1':
+        return send_from_directory(app.root_path, 'index.html')
     today = date.today()
     
     # Active workers

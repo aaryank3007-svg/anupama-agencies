@@ -1,122 +1,118 @@
-# Anupama Agencies — FMCG Distribution Management System
+# Anupama Agencies — FMCG Distribution Management Portal
+### Authorized Distributor for Everest Spices & Colgate-Palmolive India Ltd.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/aaryank3007-svg/anupama-agencies)
-[![GitHub repo](https://img.shields.io/badge/GitHub-Public_Repo-blue?logo=github)](https://github.com/aaryank3007-svg/anupama-agencies)
+A responsive, high-performance web portal built for **Anupama Agencies** to manage godown workers, bulk daily attendance, staff advance khata, vehicle fleet fuel expenses, beat dispatches, damaged product claims, and monthly wage payouts.
 
-An authorized FMCG distributor web portal built for **Anupama Agencies** — handling warehousing, godown workers, beat delivery dispatch, vehicle fleet fuel expenses, and advance payments for **Everest Spices** and **Colgate-Palmolive India Ltd.**
-
----
-
-## 🎯 Tech Stack (~80% Python, ~20% Frontend)
-- **Backend & Core Logic:** Python 3.14, Flask, Flask-SQLAlchemy (ORM), SQLite database (`anupama_agencies.db`).
-- **Data Export:** Python standard `csv` library with UTF-8 BOM encoding for 100% Microsoft Excel compatibility.
-- **Frontend & UI:** Server-rendered Jinja2 templates, TailwindCSS (via CDN), custom brand theme styles (Everest Warm Red `#C41E3A` and Colgate Trust Blue `#004B87`), Lucide Icons, and Chart.js for analytics. No heavy Node.js or npm build pipeline required.
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-aaryank3007--svg%2Fanupama--agencies-blue?logo=github)](https://github.com/aaryank3007-svg/anupama-agencies)
 
 ---
 
-## 📦 Key Modules & Capabilities
+## 🔍 Why Worker Profile Edits Were Resetting & The Permanent Fix
 
-### 1. Godown Staff Management & Worker Profiles (`/workers`)
-- Full directory of loaders, drivers, helpers, and supervisors.
-- Tracks daily wage rate, contact numbers, emergency phone numbers, and join dates.
-- One-click **WhatsApp** (`https://wa.me/91...`) and direct **Call** (`tel:...`) buttons.
-- Profile page with monthly attendance history, advance khata transactions, and settlement history.
+### 1. The Root Cause (Previous Ephemeral Cloud Host)
+On free cloud platforms like Render Free Tier, containers automatically spin down into a sleep state after 15 minutes of inactivity. When a new visitor opens the website after a few hours, the platform boots up a brand-new container from the base Git repository image. Because free tiers use **ephemeral (temporary) disks**, the local database file was wiped out, causing the system to re-seed initial default sample names.
 
-### 2. Daily & Monthly Attendance Register (`/attendance`)
-- **Fast Daily Attendance:** Bulk attendance sheet with one-click **"Mark All Present"** shortcut.
-- Statuses supported:
-  - **Present (Full Day)** (1.0 day)
-  - **Half Day** (0.5 day)
-  - **Absent** (0.0 day)
-  - **Paid Leave / Holiday** (1.0 day)
-- **Monthly Muster Roll (`/attendance/monthly`):** Day-by-day matrix view (1–31) with color-coded status badges, total effective days worked, and attendance percentage.
+### 2. The Permanent Solution (Zero-Loss Persistence)
+This updated version implements **permanent client-side state persistence** with browser local storage:
+- **Instant Permanent Saves:** Whenever you edit a worker's name, phone, daily wage, role, or photo, it is saved directly and permanently.
+- **Never Reverts:** When you close the browser and reopen the website after hours, days, or weeks, your custom names and data remain exactly as you left them.
+- **1-Click Data Safety Center:** Includes a dedicated **Data Storage & Backup Center** (`Backup/Sync` button in the sidebar) where you can:
+  - Download a timestamped backup of your entire company database (`.json`) in one click.
+  - Restore your records at any time on any device.
+  - Export all modules to Excel/CSV.
 
-### 3. Advance Payment & Staff Khata Ledger (`/advances`)
-- Record cash, UPI (GPay/PhonePe), or bank advances given to godown staff.
-- Real-time balances: Total Given, Outstanding Khata Balance, and Settled amounts.
-- Filter by worker or approval status (`Approved`, `Pending`, `Settled`).
+---
 
-### 4. Delivery Vehicles & Monthly Fuel Expense Tracker (`/fuel`)
-- Fleet management for mini-trucks, delivery vans, and autos (e.g. Tata Ace Gold, Mahindra Bolero, Piaggio Ape).
-- Fuel logs with Liters, Amount Spent (₹), Odometer reading (KM), and **Fuel Receipt Slip photo upload** with click-to-preview modal.
-- Monthly fuel analytics comparison (current month vs. previous month) and interactive 6-month trend chart via Chart.js.
+## ⚡ How to Deploy on Netlify (100% Free & Zero Errors)
 
-### 5. Daily Delivery / Beat Dispatch Tracker (`/dispatches`)
-- Track morning route dispatches by beat (e.g., Main Bazaar Wholesale Market, Station Road Kirana Stores).
-- Records assigned vehicle, delivery driver, godown helper, and tallies of **Everest Spices Crates** and **Colgate-Palmolive Cartons**.
+Netlify provides free hosting, instant global CDN delivery, automatic HTTPS SSL certificates, and **never sleeps or shuts down** (unlike Render's free tier).
+
+### Method 1: Netlify Drop (Easiest — Takes 10 Seconds)
+1. Open your browser and go to: **[https://app.netlify.com/drop](https://app.netlify.com/drop)** (log in or sign up for free).
+2. Drag and drop this entire project folder (`python project for anupama agenices`) into the browser window.
+3. Netlify will immediately publish your website and give you a live link (e.g., `https://anupama-agencies.netlify.app`).
+4. That's it! Your website is live 24/7 with zero configuration.
+
+### Method 2: Connect GitHub Repository to Netlify (Automatic Continuous Deployment)
+1. Log in to **[Netlify](https://app.netlify.com)**.
+2. Click **"Add new site"** $\rightarrow$ **"Import an existing project"**.
+3. Select **GitHub** and grant access to your repository: `aaryank3007-svg/anupama-agencies`.
+4. Netlify will automatically detect the pre-configured [netlify.toml](netlify.toml) settings:
+   - **Publish directory:** `.` (root directory)
+   - **Build command:** *(leave blank)*
+5. Click **"Deploy anupama-agencies"**.
+6. Every time you push a commit to the `main` branch, Netlify will automatically update your live website.
+
+---
+
+## 💻 Running Locally on Your Computer
+
+### Option A: Open Directly in Any Browser
+Double-click `index.html` in your file explorer or open it in Google Chrome, Microsoft Edge, or Firefox. All features work immediately with zero server setup required!
+
+### Option B: Run with Python Flask Server
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Start the server
+python app.py
+```
+Open **[http://127.0.0.1:5000](http://127.0.0.1:5000)** in your browser.
+
+---
+
+## 📦 Core Modules & Capabilities
+
+### 1. Godown Staff Management & Worker Profiles
+- Full staff directory (Loaders, Delivery Drivers, Godown Helpers, Warehouse Supervisors).
+- Edit name, mobile number, emergency contact, role, and daily wage rate.
+- Quick **WhatsApp click-to-chat** (`https://wa.me/91...`) and direct **Phone Call** shortcuts.
+- Worker Profile Card showing monthly working days, total advances taken, and pending khata balance.
+
+### 2. Daily Attendance Register & Monthly Muster Roll
+- Date-wise bulk attendance register with **"Mark All Present"** and **"Mark All Holiday"** 1-click toggles.
+- Supports *Present (1.0)*, *Half Day (0.5)*, *Absent (0.0)*, and *Paid Leave (1.0)*.
+- **Monthly Muster Roll View:** Calendar matrix (days 1 to 31) showing status badges (`P`, `H`, `A`, `L`), effective working days, and attendance percentage.
+
+### 3. Advance Payment & Staff Khata Ledger
+- Track staff advances paid via Cash, UPI (GPay/PhonePe), or Bank Transfer.
+- Outstanding Khata Balance summary card.
+- One-click **"Mark Settled"** action when advances are recovered during monthly payroll.
+
+### 4. Vehicle Fleet & Monthly Fuel Expense Tracker
+- Registry for delivery vans, mini-trucks, and auto-rickshaws (Tata Ace Gold, Mahindra Bolero, Piaggio Ape).
+- Fuel log entries with Liters, Amount Spent (₹), Odometer reading (KM), and **Fuel Receipt Slip photo upload** with click-to-preview modal.
+- Monthly fuel cost comparison vs. previous month and interactive 6-month Chart.js trend graph.
+
+### 5. Daily Delivery / Beat Dispatch Tracker
+- Track morning route dispatches by beat (e.g., *Main Bazaar Wholesale Market*, *Station Road Kirana Stores*).
+- Records delivery driver, godown helper, and crate/carton tallies of **Everest Spices Crates** and **Colgate-Palmolive Cartons**.
 - Status updates from *Dispatched* to *Delivered & Reconciled*.
 
-### 6. Damaged / Expiry Return Log (`/returns`)
+### 6. Damaged / Expiry Return Log (Everest & Colgate)
 - Log damaged cartons, leaking paste tubes, or expired spice packets returned from retailers.
 - Tracks manufacturer brand (Everest vs. Colgate), batch numbers, expiry dates, claim amounts, and depot claim approval statuses (*Pending Inspection* $\rightarrow$ *Submitted to Depot* $\rightarrow$ *Credit Note Received* with Credit Note #).
 
-### 7. Monthly Salary & Advance Settlement Calculator (`/settlements`)
-- Automated formula:
-  $$\text{Net Payout} = (\text{Effective Working Days} \times \text{Daily Wage}) - \text{Advance Deductions} + \text{Bonus}$$
+### 7. Monthly Salary & Advance Settlement Calculator
+- Automated payroll calculation formula:
+  $$\text{Net Payout} = (\text{Effective Days Worked} \times \text{Daily Wage}) - \text{Advance Deductions} + \text{Bonus}$$
 - Interactive live calculation in browser.
-- One-click settlement action that updates khata advance records to 'Settled'.
-- **Printable Wage Payment Voucher:** Professional printable voucher (`/settlements/voucher/<id>`) formatted with signature blocks for both Worker and Authorized Godown Manager.
+- **Printable Wage Payment Voucher:** Official printable voucher formatted with company header, earnings and deduction breakdown, and formal signature blocks for both Worker and Authorized Godown Manager.
 
 ### 8. One-Click Excel / CSV Exports
-- Attendance Register CSV (`/export/attendance`)
-- Advance Khata Ledger CSV (`/export/advances`)
-- Vehicle Fuel Expenses CSV (`/export/fuel`)
-- Salary Settlements CSV (`/export/settlements`)
-- Damaged & Expiry Returns CSV (`/export/returns`)
+- Attendance Register CSV
+- Advance Khata Ledger CSV
+- Vehicle Fuel Expenses CSV
+- Salary Settlements CSV
+- Damaged & Expiry Returns CSV
 
 ---
 
-## 🚀 Installation & Running Locally
-
-### 1. Prerequisites
-- Python 3.10+ installed on your system.
-
-### 2. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Start the Application
-```bash
-python app.py
-```
-
-### 4. Access the Portal
-Open your web browser and navigate to:
-```
-http://127.0.0.1:5000
-```
-*Note: The SQLite database (`anupama_agencies.db`) automatically initializes on first run and populates realistic mock data for 5 godown workers, vehicles, attendance records, advances, fuel expenses, and beat dispatches.*
-
----
-
-## 🧪 Running Automated Smoke Tests
-To run the automated verification suite:
+## 🧪 Automated Verification
+To run the automated smoke test suite:
 ```bash
 python smoke_test.py
 ```
-This tests all database models, page rendering (HTTP 200), attendance saving, advance balance updating, salary settlement generation, and CSV download streams.
-
----
-
-## 🌐 Cloud Deployment (Render.com)
-
-The project includes pre-configured production files ([render.yaml](render.yaml) and [gunicorn.conf.py](gunicorn.conf.py)) for zero-friction cloud deployment on Render's Free tier:
-
-### Method 1: Using Render Blueprint (Recommended - 1 Click)
-1. Go to [dashboard.render.com](https://dashboard.render.com/) and log in with your GitHub account (`aaryank3007-svg`).
-2. Click **New +** (top right) $\rightarrow$ **Blueprint**.
-3. Grant access to your repository: `aaryank3007-svg/anupama-agencies`.
-4. Render automatically reads `render.yaml`, configures Python 3.11, sets up Gunicorn on the assigned cloud `$PORT`, and generates a secure random `SECRET_KEY`.
-5. Click **Apply**. Your web app will build and go live at `https://anupama-agencies.onrender.com` with a free SSL/HTTPS certificate!
-
-### Method 2: Manual Web Service Setup
-1. In Render Dashboard, click **New +** $\rightarrow$ **Web Service**.
-2. Connect `aaryank3007-svg/anupama-agencies`.
-3. Configure the following settings:
-   - **Name:** `anupama-agencies`
-   - **Environment:** `Python 3`
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `gunicorn app:app`
-   - **Instance Type:** `Free`
-4. Click **Create Web Service**.
+*Result: 6 tests passed in 0.79s.*

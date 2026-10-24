@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anupama Agencies — FMCG Distributor Management Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        everest: {
+                            DEFAULT: '#C41E3A',
+                            dark: '#9E132A',
+                            light: '#FEE2E2',
+                        },
+                        colgate: {
+                            DEFAULT: '#004B87',
+                            dark: '#003360',
+                            light: '#E0F2FE',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Font: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background-color: #F8FAFC;
+            color: #0F172A;
+        }
+        .card-hover {
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #F1F5F9; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+        @media print {
+            body { background: #FFFFFF !important; color: #000000 !important; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            #voucher-view { display: block !important; padding: 0 !important; margin: 0 !important; width: 100% !important; }
+            .voucher-container { box-shadow: none !important; border: 1px solid #94A3B8 !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Mobile Navigation Backdrop -->
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-slate-900/60 z-30 hidden lg:hidden transition-opacity"></div>
+
+    <div class="flex flex-1 min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside id="app-sidebar" class="no-print fixed lg:static inset-y-0 left-0 z-40 w-72 bg-slate-900 text-white flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none">
+            <!-- Brand Header -->
+            <div class="p-5 border-b border-slate-800 bg-slate-950/70">
+                <div class="flex items-center space-x-3">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-red-600 via-amber-500 to-blue-600 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-red-500/20">
+                        AA
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight tracking-tight text-white">Anupama Agencies</h1>
+                        <p class="text-xs text-slate-400 font-medium">Authorized FMCG Distributor</p>
+                    </div>
+                </div>
+
+                <!-- Brand Partnership Badges -->
+                <div class="mt-4 flex items-center gap-2">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-red-950/80 text-red-300 border border-red-800/80">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-400 mr-1.5"></span>
+                        Everest Spices
+                    </span>
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-950/80 text-blue-300 border border-blue-800/80">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-400 mr-1.5"></span>
+                        Colgate-Palmolive
+                    </span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto text-sm font-medium">
+                <div class="px-3 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Main Operations</div>
+                
+                <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    <span>Dashboard</span>
+                </button>
+
+                <button onclick="switchView('workers')" id="nav-workers" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                    <span>Godown Staff & Profiles</span>
+                </button>
+
+                <div class="px-3 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Attendance & Wages</div>
+
+                <button onclick="switchView('attendance')" id="nav-attendance" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i data-lucide="clipboard-check" class="w-5 h-5"></i>
+                    <span>Daily Attendance</span>
+                </button>
+
+                <button onclick="switchView('monthly-attendance')" id="nav-monthly-attendance" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i data-lucide="calendar" class="w-5 h-5"></i>
+                    <span>Monthly Muster Roll</span>
+                </button>
+
+                <button onclick="switchView('advances')" id="nav-advances" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i data-lucide="wallet" class="w-5 h-5"></i>
+                    <span>Advance Khata Ledger</span>
+                </button>
+
+                <button onclick="switchView('settlements')" id="nav-settlements" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i data-lucide="calculator" class="w-5 h-5"></i>
+                    <span>Salary & Settlement</span>
+                </button>
+
+                <div class="px-3 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Fleet & Dispatches</div>
+
+                <button onclick="switchView('fuel')" id="nav-fuel" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i data-lucide="fuel" class="w-5 h-5"></i>
+                    <span>Vehicle Fuel Tracker</span>
+                </button>
+
+                <button onclick="switchView('dispatches')" id="nav-dispatches" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i data-lucide="package-check" class="w-5 h-5"></i>
+                    <span>Daily Beat Dispatch</span>
+                </button>
+
+                <button onclick="switchView('returns')" id="nav-returns" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    <span>Damaged & Expiry Log</span>
+                </button>
+            </nav>
+
+            <!-- Data Safety & Export Section -->
+            <div class="p-3 border-t border-slate-800 bg-slate-950/50">
+                <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 px-2 flex items-center justify-between">
+                    <span>Excel & Backup</span>
+                    <span class="text-[10px] text-emerald-400 font-normal">● Saved</span>
+                </div>
+                <div class="grid grid-cols-2 gap-1.5 text-xs">
+                    <button onclick="exportAllCSV()" class="p-2 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5" title="Download Excel CSV Reports">
+                        <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i> Excel CSV
+                    </button>
+                    <button onclick="openModal('backup-modal')" class="p-2 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5" title="Backup or Restore Data">
+                        <i data-lucide="shield-check" class="w-3.5 h-3.5 text-blue-400"></i> Backup/Sync
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col min-w-0">
+            <!-- Top App Bar -->
+            <header class="no-print bg-white border-b border-slate-200 sticky top-0 z-20 shadow-xs">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <!-- Mobile Menu Button & Title -->
+                    <div class="flex items-center gap-3">
+                        <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none">
+                            <i data-lucide="menu" class="w-6 h-6"></i>
+                        </button>
+                        <div>
+                            <span class="text-xs font-semibold text-colgate uppercase tracking-wider">Godown Operations System</span>
+                            <h2 id="page-title" class="text-base font-bold text-slate-900">Dashboard</h2>
+                        </div>
+                    </div>
+
+                    <!-- Top Bar Badges & Actions -->
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <div class="hidden md:flex items-center gap-2 text-xs font-medium text-slate-600 bg-slate-100 py-1.5 px-3 rounded-lg border border-slate-200">
+                            <i data-lucide="calendar-days" class="w-4 h-4 text-slate-500"></i>
+                            <span id="current-date-badge"></span>
+                        </div>
+                        <button onclick="openModal('backup-modal')" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors">
+                            <i data-lucide="database" class="w-4 h-4 text-slate-500"></i>
+                            <span>Data Storage</span>
+                        </button>
+                        <button onclick="switchView('attendance')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-everest hover:bg-everest-dark transition-colors shadow-sm">
+                            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                            <span class="hidden sm:inline">Mark Attendance</span>
+                            <span class="sm:hidden">Attendance</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Toast Container -->
+            <div id="toast-container" class="no-print fixed top-20 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+            <!-- Page Specific Views -->
+            <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+                <!-- 1. DASHBOARD VIEW -->
+                <div id="view-dashboard" class="app-view space-y-6"></div>
+
+                <!-- 2. WORKERS VIEW -->
+                <div id="view-workers" class="app-view space-y-6 hidden"></div>
+
+                <!-- 3. DAILY ATTENDANCE VIEW -->
+                <div id="view-attendance" class="app-view space-y-6 hidden"></div>
+
+                <!-- 4. MONTHLY ATTENDANCE VIEW -->
+                <div id="view-monthly-attendance" class="app-view space-y-6 hidden"></div>
+
+                <!-- 5. ADVANCES VIEW -->
+                <div id="view-advances" class="app-view space-y-6 hidden"></div>
+
+                <!-- 6. FUEL VIEW -->
+                <div id="view-fuel" class="app-view space-y-6 hidden"></div>
+
+                <!-- 7. DISPATCHES VIEW -->
+                <div id="view-dispatches" class="app-view space-y-6 hidden"></div>
+
+                <!-- 8. RETURNS VIEW -->
+                <div id="view-returns" class="app-view space-y-6 hidden"></div>
+
+                <!-- 9. SETTLEMENTS VIEW -->
+                <div id="view-settlements" class="app-view space-y-6 hidden"></div>
+
+                <!-- 10. PRINTABLE VOUCHER VIEW -->
+                <div id="view-voucher" class="app-view space-y-6 hidden"></div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="no-print bg-white border-t border-slate-200 py-4 mt-auto">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+                    <p>© <span id="footer-year">2026</span> <strong>Anupama Agencies</strong> • Everest Spices & Colgate-Palmolive Authorized Distribution Portal</p>
+                    <p class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                        Permanent Browser Storage • Netlify Verified Deployment
+                    </p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- MODAL: Image Preview (Receipts & Worker Photos) -->
+    <div id="image-preview-modal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 id="modal-preview-caption" class="text-sm font-bold text-slate-800">Preview</h3>
+                <button onclick="closeModal('image-preview-modal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-4 flex items-center justify-center bg-slate-50">
+                <img id="modal-preview-img" src="" alt="Preview" class="max-h-[70vh] rounded-lg shadow-inner object-contain">
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Data Backup & Restore Center -->
+    <div id="backup-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-100">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-blue-100 text-colgate flex items-center justify-center">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    </span>
+                    <h3 class="text-sm font-bold text-slate-900">Data Storage & Backup Center</h3>
+                </div>
+                <button onclick="closeModal('backup-modal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="p-5 space-y-4 text-xs">
+                <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-start gap-2.5">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                    <div>
+                        <p class="font-bold">Permanent Local Storage Active</p>
+                        <p class="text-[11px] text-emerald-700 mt-0.5">All edits made to worker profiles, attendance, advances, and fuel logs are saved permanently in this browser. They will <strong>never reset to default names</strong> after hours or upon reopening.</p>
+                    </div>
+                </div>
+
+                <!-- Export Backup File -->
+                <div class="border border-slate-200 rounded-xl p-3.5 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-800">Export Complete Backup (JSON)</span>
+                        <i data-lucide="download-cloud" class="w-4 h-4 text-slate-500"></i>
+                    </div>
+                    <p class="text-[11px] text-slate-500">Download a full backup of all workers, attendance, advances, vehicles, and returns to your device.</p>
+                    <button onclick="downloadBackupJSON()" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>Download Backup File</span>
+                    </button>
+                </div>
+
+                <!-- Restore Backup File -->
+                <div class="border border-slate-200 rounded-xl p-3.5 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-800">Restore Data from Backup File</span>
+                        <i data-lucide="upload-cloud" class="w-4 h-4 text-slate-500"></i>
+                    </div>
+                    <p class="text-[11px] text-slate-500">Restore your records from a previously downloaded JSON backup file.</p>
+                    <input type="file" id="restore-file-input" accept=".json" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
+                    <button onclick="restoreBackupFromFile()" class="w-full py-2 bg-colgate hover:bg-colgate-dark text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                        <span>Restore Data</span>
+                    </button>
+                </div>
+
+                <!-- Reset to Seed Data -->
+                <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                    <div>
+                        <span class="font-bold text-slate-700 block">Reset to Factory Default</span>
+                        <span class="text-[10px] text-slate-400">Reverts to initial 5 sample workers</span>
+                    </div>
+                    <button onclick="confirmResetToSeed()" class="px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg font-bold transition-colors">
+                        Reset Default
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Application Logic Script -->
+    <script src="static/js/app.js"></script>
+</body>
+</html>
