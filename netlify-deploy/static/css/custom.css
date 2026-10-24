@@ -1,0 +1,112 @@
+/* Anupama Agencies - FMCG Distributor Custom Styles */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    --brand-everest: #C41E3A;
+    --brand-everest-dark: #9E132A;
+    --brand-everest-light: #FEE2E2;
+    --brand-colgate: #004B87;
+    --brand-colgate-dark: #003360;
+    --brand-colgate-light: #E0F2FE;
+    --accent-gold: #D97706;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: #F8FAFC;
+    color: #0F172A;
+}
+
+/* Brand Gradients & Accents */
+.bg-brand-gradient {
+    background: linear-gradient(135deg, #004B87 0%, #00284A 100%);
+}
+
+.bg-everest-gradient {
+    background: linear-gradient(135deg, #C41E3A 0%, #9E132A 100%);
+}
+
+.brand-everest-text {
+    color: var(--brand-everest);
+}
+
+.brand-colgate-text {
+    color: var(--brand-colgate);
+}
+
+.border-everest {
+    border-color: var(--brand-everest);
+}
+
+.border-colgate {
+    border-color: var(--brand-colgate);
+}
+
+/* Card hover animation */
+.card-hover {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+}
+
+/* Status Badge Badges */
+.badge-present {
+    background-color: #DEF7EC;
+    color: #03543F;
+    border: 1px solid #BCF0DA;
+}
+.badge-halfday {
+    background-color: #FEF08A;
+    color: #713F12;
+    border: 1px solid #FDE047;
+}
+.badge-absent {
+    background-color: #FDE8E8;
+    color: #9B1C1C;
+    border: 1px solid #FBD5D5;
+}
+.badge-leave {
+    background-color: #E1EFFE;
+    color: #1E429F;
+    border: 1px solid #C3DDFD;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #F1F5F9;
+}
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+/* Printable Voucher CSS */
+@media print {
+    body {
+        background: #FFFFFF !important;
+        color: #000000 !important;
+    }
+    .no-print {
+        display: none !important;
+    }
+    .print-only {
+        display: block !important;
+    }
+    .voucher-container {
+        box-shadow: none !important;
+        border: 1px solid #94A3B8 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
